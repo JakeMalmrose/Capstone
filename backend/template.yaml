@@ -36,6 +36,104 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
+  GetSupportedFeedsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/get_supported_feeds.lambda_handler
+      Events:
+        HttpGet:
+          Type: Api
+          Properties:
+            Path: /supported-feeds
+            Method: get
+      Environment:
+        Variables:
+          FEED_TABLE_NAME: !Ref FeedTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref FeedTable
+
+  AddSupportedFeedFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/add_supported_feed.lambda_handler
+      Events:
+        HttpPost:
+          Type: Api
+          Properties:
+            Path: /supported-feeds
+            Method: post
+      Environment:
+        Variables:
+          FEED_TABLE_NAME: !Ref FeedTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FeedTable
+
+  GetFeedArticlesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/get_feed_articles.lambda_handler
+      Events:
+        HttpGet:
+          Type: Api
+          Properties:
+            Path: /feed/{feed_id}/articles
+            Method: get
+
+  GetArticleSummaryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/get_article_summary.lambda_handler
+      Events:
+        HttpGet:
+          Type: Api
+          Properties:
+            Path: /article/{article_id}/summary
+            Method: get
+
+  RSSParserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/rss_parser.lambda_handler
+
+  ArticleFetcherFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/article_fetcher.lambda_handler
+
+  SummarizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/summarizer.lambda_handler
+
+  CacheTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: article_url
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  FeedTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: id
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
 Outputs:
   SummarizationApi:
     Description: "API Gateway endpoint URL for Prod stage for Summarization function"

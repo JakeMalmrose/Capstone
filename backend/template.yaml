@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AI News summarization app
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.12
+
+Resources:
+  SummarizationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/summarization.lambda_handler
+      Events:
+        Summarize:
+          Type: Api
+          Properties:
+            Path: /summarize
+            Method: post
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref SummarizationTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SummarizationTable
+
+  SummarizationTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: id
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+Outputs:
+  SummarizationApi:
+    Description: "API Gateway endpoint URL for Prod stage for Summarization function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/summarize/"
+  SummarizationFunction:
+    Description: "Summarization Lambda Function ARN"
+    Value: !GetAtt SummarizationFunction.Arn
+  SummarizationFunctionIamRole:
+    Description: "Implicit IAM Role created for Summarization function"
+    Value: !GetAtt SummarizationFunctionRole.Arn

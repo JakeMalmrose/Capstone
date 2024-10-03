@@ -1,16 +1,18 @@
-// src/App.tsx
-
 import React from 'react';
-import { CssBaseline } from '@mui/material';
-import Home from './pages/Home';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import AuthPage from './components/AuthPage';
+import AuthCallback from './components/AuthCallback';
 
-const App: React.FC = () => {
+function App() {
   return (
-    <>
-      <CssBaseline />
-      <Home />
-    </>
+    <Router>
+      <Routes>
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        {/* Add other routes as needed */}
+      </Routes>
+    </Router>
   );
-};
+}
 
 export default App;

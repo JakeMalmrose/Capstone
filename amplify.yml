@@ -1,6 +1,12 @@
 version: 1
 applications:
   - appRoot: frontend
+    backend:
+      phases:
+        build:
+          commands:
+            - npm ci --cache .npm --prefer-offline
+            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
     frontend:
       phases:
         preBuild:
@@ -13,6 +19,7 @@ applications:
         baseDirectory: dist
         files:
           - '**/*'
-    cache:
-      paths:
-        - node_modules/**/*
+      cache:
+        paths:
+          - .npm/**/*
+          - node_modules/**/*

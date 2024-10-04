@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@aws-amplify/ui-react": "^6.2.0",
+    "@aws-amplify/ui-vue": "^4.2.19",
     "aws-amplify": "^6.5.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

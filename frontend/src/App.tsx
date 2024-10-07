@@ -1,51 +1,31 @@
-import { useEffect, useState } from "react";
-import type { Schema } from "../amplify/data/resource";
-import { generateClient } from "aws-amplify/data";
+import { Authenticator } from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css';
+import { Link, Route, Routes } from 'react-router-dom';
+import Websites from './components/Websites';
 
-import { Authenticator } from '@aws-amplify/ui-react'
-import '@aws-amplify/ui-react/styles.css'
-
-const client = generateClient<Schema>();
 
 function App() {
-
-    
-  function deleteTodo(id: string) {
-    client.models.Todo.delete({ id })
-  }
-  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
-
-  useEffect(() => {
-    client.models.Todo.observeQuery().subscribe({
-      next: (data) => setTodos([...data.items]),
-    });
-  }, []);
-
-  function createTodo() {
-    client.models.Todo.create({ content: window.prompt("Todo content") });
-  }
-
   return (
     <Authenticator>
       {({ signOut }) => (
-        <main>
-          <h1>Websites</h1>
-          <button onClick={createTodo}>+ new</button>
-          <ul>
-            {todos.map((todo) => (
-              <li key={todo.id} 
-              onClick={() => deleteTodo(todo.id)}
-              >{todo.content}</li>
-            ))}
-          </ul>
-          <div>
-            Home page
-            <br />
-          </div>
-          <button onClick={signOut}>Sign out</button>
-        </main>
+        <>
+          <nav>
+            <ul>
+              <li><Link to="/">Home</Link></li>
+              <li><Link to="/websites">Websites</Link></li>
+              <li><Link to="/feeds">Feeds</Link></li>
+              <li><Link to="/summaries">Summaries</Link></li>
+            </ul>
+          </nav>
+          <button className="sign-out-button" onClick={signOut}>Sign out</button>
+          <main>
+            <Routes>
+              <Route path="/websites" element={<Websites />} />
+            </Routes>
+          </main>
+        </>
       )}
-      </Authenticator>
+    </Authenticator>
   );
 }
 

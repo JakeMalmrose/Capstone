@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/data';
 import { Alert, Heading, Text, View, Collection, Card } from '@aws-amplify/ui-react';

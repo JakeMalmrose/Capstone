@@ -9,9 +9,7 @@ export const auth = defineAuth({
     email: true,
   },
   userAttributes: {
-    "custom:isAdmin": {
-      dataType: "Boolean",
-      mutable: true,
-    }
+    
   },
+  groups: ["Admin", "User"],
 });

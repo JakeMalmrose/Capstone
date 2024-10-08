@@ -15,6 +15,7 @@ const schema = a.schema({
       tags: a.string().array(),
       createdAt: a.datetime(),
       userId: a.string(),
+      websiteId: a.string(),
     })
     .authorization(allow => [allow.owner(), allow.authenticated().to(["read"])]),
 

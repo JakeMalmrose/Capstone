@@ -20,6 +20,8 @@
   "devDependencies": {
     "@aws-amplify/backend": "^1.1.1",
     "@aws-amplify/backend-cli": "^1.2.4",
+    "@aws-sdk/client-cognito-identity-provider": "^3.666.0",
+    "@types/aws-lambda": "^8.10.145",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@typescript-eslint/eslint-plugin": "^7.2.0",

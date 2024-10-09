@@ -1,11 +1,24 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { sayHello } from "../functions/say-hello/resource";
 
 const schema = a.schema({
-  Todo: a
-  .model({
-    content: a.string(),
-  })
-  .authorization((allow) => [allow.owner()]),
+  //functions
+  sayHello: a
+    .query()
+    .arguments({
+      name: a.string(),
+    })
+    .returns(a.string())
+    .authorization(allow => [allow.authenticated()])
+    .handler(a.handler.function(sayHello)),
+  summarize: a
+    .query()
+    .arguments({
+      text: a.string(),
+    })
+    .returns(a.string())
+    .authorization(allow => [allow.authenticated()]),
+  //other things
   Summary: a
     .model({
       articleUrl: a.string().required(),

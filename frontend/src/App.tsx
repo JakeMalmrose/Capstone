@@ -6,6 +6,7 @@ import Websites from './components/Websites';
 import WebsiteArticles from './components/WebsiteArticles';
 import WebsiteList from './components/WebsiteList';
 import { fetchAuthSession } from 'aws-amplify/auth';
+import Home from './components/Home';
 
 function App() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -22,6 +23,7 @@ function App() {
         setIsAdmin(false);
       } finally {
         setLoading(false);
+        
       }
     }
 
@@ -48,7 +50,7 @@ function App() {
           <button className="sign-out-button" onClick={signOut}>Sign out</button>
           <main>
             <Routes>
-              <Route path="/"/>
+              <Route path="/" element={<Home />}/>
               <Route path="/websites" element={<WebsiteList />}/>
               <Route path="/feeds"/>
               <Route path="/summaries"/>

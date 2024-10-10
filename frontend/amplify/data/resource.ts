@@ -1,5 +1,7 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { sayHello } from "../functions/say-hello/resource";
+import { summarize } from "../functions/summarize/resource";
+import { extractUrls } from "../functions/extract-urls/resource";
 
 const schema = a.schema({
   //functions
@@ -17,7 +19,17 @@ const schema = a.schema({
       text: a.string(),
     })
     .returns(a.string())
-    .authorization(allow => [allow.authenticated()]),
+    .authorization(allow => [allow.authenticated()])
+    .handler(a.handler.function(summarize)),
+  extractUrls: a
+    .query()
+    .arguments({
+      url: a.string(),
+    })
+    .returns(a.string().array())
+    .authorization(allow => [allow.authenticated()])
+    .handler(a.handler.function(extractUrls)),
+
   //other things
   Summary: a
     .model({

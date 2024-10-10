@@ -7,6 +7,8 @@ import WebsiteArticles from './components/WebsiteArticles';
 import WebsiteList from './components/WebsiteList';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import Home from './components/Home';
+import Summarizer from './components/Summarizer.tsx';
+import Extractor from './components/Extractor';
 
 function App() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -23,7 +25,6 @@ function App() {
         setIsAdmin(false);
       } finally {
         setLoading(false);
-        
       }
     }
 
@@ -41,6 +42,8 @@ function App() {
           <nav>
             <ul>
               <li><Link to="/">Home</Link></li>
+              <li><Link to="/Summarizer">Summarizer</Link></li>
+              <li><Link to="/extractor">Extractor</Link></li>
               <li><Link to="/websites">Websites</Link></li>
               <li><Link to="/feeds">Feeds</Link></li>
               <li><Link to="/summaries">Summaries</Link></li>
@@ -51,6 +54,8 @@ function App() {
           <main>
             <Routes>
               <Route path="/" element={<Home />}/>
+              <Route path="/Summarizer" element={<Summarizer />}/>
+              <Route path="/extractor" element={<Extractor />}/>
               <Route path="/websites" element={<WebsiteList />}/>
               <Route path="/feeds"/>
               <Route path="/summaries"/>

@@ -12,7 +12,12 @@
   "dependencies": {
     "@aws-amplify/ui-react": "^6.5.2",
     "@aws-amplify/ui-vue": "^4.2.19",
+    "@types/jsdom": "^21.1.7",
     "aws-amplify": "^6.5.2",
+    "axios": "^1.7.7",
+    "jsdom": "^25.0.1",
+    "openai": "^4.67.3",
+    "puppeteer": "^23.5.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.26.2"

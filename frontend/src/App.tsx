@@ -47,7 +47,7 @@ function App() {
               <li><Link to="/websites">Websites</Link></li>
               <li><Link to="/feeds">Feeds</Link></li>
               <li><Link to="/summaries">Summaries</Link></li>
-              {isAdmin && <li><Link to="/admin/websites">Manage Websites</Link></li>}
+              {!isAdmin && <li><Link to="/admin/websites">Manage Websites</Link></li>}
             </ul>
           </nav>
           <button className="sign-out-button" onClick={signOut}>Sign out</button>
@@ -60,7 +60,7 @@ function App() {
               <Route path="/feeds"/>
               <Route path="/summaries"/>
               <Route path="/website/:websiteId" element={<WebsiteArticles />} />
-              {isAdmin && (
+              {!isAdmin && (
                 <Route path="/admin/websites" element={<Websites />} />
               )}
             </Routes>

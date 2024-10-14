@@ -184,43 +184,31 @@ export default function SummaryCreateForm(props) {
     ...rest
   } = props;
   const initialValues = {
-    articleUrl: "",
-    title: "",
-    fullText: "",
-    summary: "",
+    summaryId: "",
+    text: "",
     tags: [],
     createdAt: "",
-    userId: "",
   };
-  const [articleUrl, setArticleUrl] = React.useState(initialValues.articleUrl);
-  const [title, setTitle] = React.useState(initialValues.title);
-  const [fullText, setFullText] = React.useState(initialValues.fullText);
-  const [summary, setSummary] = React.useState(initialValues.summary);
+  const [summaryId, setSummaryId] = React.useState(initialValues.summaryId);
+  const [text, setText] = React.useState(initialValues.text);
   const [tags, setTags] = React.useState(initialValues.tags);
   const [createdAt, setCreatedAt] = React.useState(initialValues.createdAt);
-  const [userId, setUserId] = React.useState(initialValues.userId);
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
-    setArticleUrl(initialValues.articleUrl);
-    setTitle(initialValues.title);
-    setFullText(initialValues.fullText);
-    setSummary(initialValues.summary);
+    setSummaryId(initialValues.summaryId);
+    setText(initialValues.text);
     setTags(initialValues.tags);
     setCurrentTagsValue("");
     setCreatedAt(initialValues.createdAt);
-    setUserId(initialValues.userId);
     setErrors({});
   };
   const [currentTagsValue, setCurrentTagsValue] = React.useState("");
   const tagsRef = React.createRef();
   const validations = {
-    articleUrl: [{ type: "Required" }],
-    title: [{ type: "Required" }],
-    fullText: [{ type: "Required" }],
-    summary: [{ type: "Required" }],
+    summaryId: [{ type: "Required" }],
+    text: [{ type: "Required" }],
     tags: [],
     createdAt: [],
-    userId: [],
   };
   const runValidationTasks = async (
     fieldName,
@@ -265,13 +253,10 @@ export default function SummaryCreateForm(props) {
       onSubmit={async (event) => {
         event.preventDefault();
         let modelFields = {
-          articleUrl,
-          title,
-          fullText,
-          summary,
+          summaryId,
+          text,
           tags,
           createdAt,
-          userId,
         };
         const validationResponses = await Promise.all(
           Object.keys(validations).reduce((promises, fieldName) => {
@@ -326,137 +311,68 @@ export default function SummaryCreateForm(props) {
       {...rest}
     >
       <TextField
-        label="Article url"
+        label="Summary id"
         isRequired={true}
         isReadOnly={false}
-        value={articleUrl}
+        value={summaryId}
         onChange={(e) => {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              articleUrl: value,
-              title,
-              fullText,
-              summary,
+              summaryId: value,
+              text,
               tags,
               createdAt,
-              userId,
             };
             const result = onChange(modelFields);
-            value = result?.articleUrl ?? value;
+            value = result?.summaryId ?? value;
           }
-          if (errors.articleUrl?.hasError) {
-            runValidationTasks("articleUrl", value);
+          if (errors.summaryId?.hasError) {
+            runValidationTasks("summaryId", value);
           }
-          setArticleUrl(value);
+          setSummaryId(value);
         }}
-        onBlur={() => runValidationTasks("articleUrl", articleUrl)}
-        errorMessage={errors.articleUrl?.errorMessage}
-        hasError={errors.articleUrl?.hasError}
-        {...getOverrideProps(overrides, "articleUrl")}
+        onBlur={() => runValidationTasks("summaryId", summaryId)}
+        errorMessage={errors.summaryId?.errorMessage}
+        hasError={errors.summaryId?.hasError}
+        {...getOverrideProps(overrides, "summaryId")}
       ></TextField>
       <TextField
-        label="Title"
+        label="Text"
         isRequired={true}
         isReadOnly={false}
-        value={title}
+        value={text}
         onChange={(e) => {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              articleUrl,
-              title: value,
-              fullText,
-              summary,
+              summaryId,
+              text: value,
               tags,
               createdAt,
-              userId,
             };
             const result = onChange(modelFields);
-            value = result?.title ?? value;
+            value = result?.text ?? value;
           }
-          if (errors.title?.hasError) {
-            runValidationTasks("title", value);
+          if (errors.text?.hasError) {
+            runValidationTasks("text", value);
           }
-          setTitle(value);
+          setText(value);
         }}
-        onBlur={() => runValidationTasks("title", title)}
-        errorMessage={errors.title?.errorMessage}
-        hasError={errors.title?.hasError}
-        {...getOverrideProps(overrides, "title")}
-      ></TextField>
-      <TextField
-        label="Full text"
-        isRequired={true}
-        isReadOnly={false}
-        value={fullText}
-        onChange={(e) => {
-          let { value } = e.target;
-          if (onChange) {
-            const modelFields = {
-              articleUrl,
-              title,
-              fullText: value,
-              summary,
-              tags,
-              createdAt,
-              userId,
-            };
-            const result = onChange(modelFields);
-            value = result?.fullText ?? value;
-          }
-          if (errors.fullText?.hasError) {
-            runValidationTasks("fullText", value);
-          }
-          setFullText(value);
-        }}
-        onBlur={() => runValidationTasks("fullText", fullText)}
-        errorMessage={errors.fullText?.errorMessage}
-        hasError={errors.fullText?.hasError}
-        {...getOverrideProps(overrides, "fullText")}
-      ></TextField>
-      <TextField
-        label="Summary"
-        isRequired={true}
-        isReadOnly={false}
-        value={summary}
-        onChange={(e) => {
-          let { value } = e.target;
-          if (onChange) {
-            const modelFields = {
-              articleUrl,
-              title,
-              fullText,
-              summary: value,
-              tags,
-              createdAt,
-              userId,
-            };
-            const result = onChange(modelFields);
-            value = result?.summary ?? value;
-          }
-          if (errors.summary?.hasError) {
-            runValidationTasks("summary", value);
-          }
-          setSummary(value);
-        }}
-        onBlur={() => runValidationTasks("summary", summary)}
-        errorMessage={errors.summary?.errorMessage}
-        hasError={errors.summary?.hasError}
-        {...getOverrideProps(overrides, "summary")}
+        onBlur={() => runValidationTasks("text", text)}
+        errorMessage={errors.text?.errorMessage}
+        hasError={errors.text?.hasError}
+        {...getOverrideProps(overrides, "text")}
       ></TextField>
       <ArrayField
         onChange={async (items) => {
           let values = items;
           if (onChange) {
             const modelFields = {
-              articleUrl,
-              title,
-              fullText,
-              summary,
+              summaryId,
+              text,
               tags: values,
               createdAt,
-              userId,
             };
             const result = onChange(modelFields);
             values = result?.tags ?? values;
@@ -507,13 +423,10 @@ export default function SummaryCreateForm(props) {
             e.target.value === "" ? "" : new Date(e.target.value).toISOString();
           if (onChange) {
             const modelFields = {
-              articleUrl,
-              title,
-              fullText,
-              summary,
+              summaryId,
+              text,
               tags,
               createdAt: value,
-              userId,
             };
             const result = onChange(modelFields);
             value = result?.createdAt ?? value;
@@ -527,36 +440,6 @@ export default function SummaryCreateForm(props) {
         errorMessage={errors.createdAt?.errorMessage}
         hasError={errors.createdAt?.hasError}
         {...getOverrideProps(overrides, "createdAt")}
-      ></TextField>
-      <TextField
-        label="User id"
-        isRequired={false}
-        isReadOnly={false}
-        value={userId}
-        onChange={(e) => {
-          let { value } = e.target;
-          if (onChange) {
-            const modelFields = {
-              articleUrl,
-              title,
-              fullText,
-              summary,
-              tags,
-              createdAt,
-              userId: value,
-            };
-            const result = onChange(modelFields);
-            value = result?.userId ?? value;
-          }
-          if (errors.userId?.hasError) {
-            runValidationTasks("userId", value);
-          }
-          setUserId(value);
-        }}
-        onBlur={() => runValidationTasks("userId", userId)}
-        errorMessage={errors.userId?.errorMessage}
-        hasError={errors.userId?.hasError}
-        {...getOverrideProps(overrides, "userId")}
       ></TextField>
       <Flex
         justifyContent="space-between"

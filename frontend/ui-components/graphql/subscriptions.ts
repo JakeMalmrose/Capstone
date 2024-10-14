@@ -2,21 +2,100 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
+export const onCreateArticle = /* GraphQL */ `
+  subscription OnCreateArticle(
+    $filter: ModelSubscriptionArticleFilterInput
+    $owner: String
+  ) {
+    onCreateArticle(filter: $filter, owner: $owner) {
+      articleId
+      createdAt
+      feed {
+        createdAt
+        description
+        feedId
+        id
+        name
+        owner
+        tags
+        type
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      feedId
+      fullText
+      id
+      owner
+      summaries {
+        nextToken
+        __typename
+      }
+      tags
+      title
+      updatedAt
+      url
+      __typename
+    }
+  }
+`;
 export const onCreateFeed = /* GraphQL */ `
   subscription OnCreateFeed(
     $filter: ModelSubscriptionFeedFilterInput
     $owner: String
   ) {
     onCreateFeed(filter: $filter, owner: $owner) {
+      articles {
+        nextToken
+        __typename
+      }
+      createdAt
+      description
+      feedId
+      id
+      name
+      owner
+      tags
+      type
+      updatedAt
+      url
+      website {
+        category
+        createdAt
+        id
+        name
+        owner
+        tags
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      websiteId
+      __typename
+    }
+  }
+`;
+export const onCreateSummarizer = /* GraphQL */ `
+  subscription OnCreateSummarizer(
+    $filter: ModelSubscriptionSummarizerFilterInput
+    $owner: String
+  ) {
+    onCreateSummarizer(filter: $filter, owner: $owner) {
       createdAt
       description
       id
       name
       owner
-      type
+      summaries {
+        nextToken
+        __typename
+      }
+      summarizerId
+      tags
+      tier
       updatedAt
-      url
-      websiteId
       __typename
     }
   }
@@ -27,47 +106,39 @@ export const onCreateSummary = /* GraphQL */ `
     $owner: String
   ) {
     onCreateSummary(filter: $filter, owner: $owner) {
-      articleUrl
+      article {
+        articleId
+        createdAt
+        feedId
+        fullText
+        id
+        owner
+        tags
+        title
+        updatedAt
+        url
+        __typename
+      }
+      articleId
       createdAt
-      fullText
       id
       owner
-      summary
+      summarizer {
+        createdAt
+        description
+        id
+        name
+        owner
+        summarizerId
+        tags
+        tier
+        updatedAt
+        __typename
+      }
+      summarizerId
+      summaryId
       tags
-      title
-      updatedAt
-      userId
-      __typename
-    }
-  }
-`;
-export const onCreateTodo = /* GraphQL */ `
-  subscription OnCreateTodo(
-    $filter: ModelSubscriptionTodoFilterInput
-    $owner: String
-  ) {
-    onCreateTodo(filter: $filter, owner: $owner) {
-      content
-      createdAt
-      id
-      owner
-      updatedAt
-      __typename
-    }
-  }
-`;
-export const onCreateUser = /* GraphQL */ `
-  subscription OnCreateUser(
-    $filter: ModelSubscriptionUserFilterInput
-    $owner: String
-  ) {
-    onCreateUser(filter: $filter, owner: $owner) {
-      createdAt
-      email
-      favoriteFeeds
-      id
-      isAdmin
-      owner
+      text
       updatedAt
       __typename
     }
@@ -81,10 +152,53 @@ export const onCreateWebsite = /* GraphQL */ `
     onCreateWebsite(filter: $filter, owner: $owner) {
       category
       createdAt
+      feeds {
+        nextToken
+        __typename
+      }
       id
       name
       owner
       tags
+      updatedAt
+      url
+      websiteId
+      __typename
+    }
+  }
+`;
+export const onDeleteArticle = /* GraphQL */ `
+  subscription OnDeleteArticle(
+    $filter: ModelSubscriptionArticleFilterInput
+    $owner: String
+  ) {
+    onDeleteArticle(filter: $filter, owner: $owner) {
+      articleId
+      createdAt
+      feed {
+        createdAt
+        description
+        feedId
+        id
+        name
+        owner
+        tags
+        type
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      feedId
+      fullText
+      id
+      owner
+      summaries {
+        nextToken
+        __typename
+      }
+      tags
+      title
       updatedAt
       url
       __typename
@@ -97,15 +211,56 @@ export const onDeleteFeed = /* GraphQL */ `
     $owner: String
   ) {
     onDeleteFeed(filter: $filter, owner: $owner) {
+      articles {
+        nextToken
+        __typename
+      }
+      createdAt
+      description
+      feedId
+      id
+      name
+      owner
+      tags
+      type
+      updatedAt
+      url
+      website {
+        category
+        createdAt
+        id
+        name
+        owner
+        tags
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      websiteId
+      __typename
+    }
+  }
+`;
+export const onDeleteSummarizer = /* GraphQL */ `
+  subscription OnDeleteSummarizer(
+    $filter: ModelSubscriptionSummarizerFilterInput
+    $owner: String
+  ) {
+    onDeleteSummarizer(filter: $filter, owner: $owner) {
       createdAt
       description
       id
       name
       owner
-      type
+      summaries {
+        nextToken
+        __typename
+      }
+      summarizerId
+      tags
+      tier
       updatedAt
-      url
-      websiteId
       __typename
     }
   }
@@ -116,47 +271,39 @@ export const onDeleteSummary = /* GraphQL */ `
     $owner: String
   ) {
     onDeleteSummary(filter: $filter, owner: $owner) {
-      articleUrl
+      article {
+        articleId
+        createdAt
+        feedId
+        fullText
+        id
+        owner
+        tags
+        title
+        updatedAt
+        url
+        __typename
+      }
+      articleId
       createdAt
-      fullText
       id
       owner
-      summary
+      summarizer {
+        createdAt
+        description
+        id
+        name
+        owner
+        summarizerId
+        tags
+        tier
+        updatedAt
+        __typename
+      }
+      summarizerId
+      summaryId
       tags
-      title
-      updatedAt
-      userId
-      __typename
-    }
-  }
-`;
-export const onDeleteTodo = /* GraphQL */ `
-  subscription OnDeleteTodo(
-    $filter: ModelSubscriptionTodoFilterInput
-    $owner: String
-  ) {
-    onDeleteTodo(filter: $filter, owner: $owner) {
-      content
-      createdAt
-      id
-      owner
-      updatedAt
-      __typename
-    }
-  }
-`;
-export const onDeleteUser = /* GraphQL */ `
-  subscription OnDeleteUser(
-    $filter: ModelSubscriptionUserFilterInput
-    $owner: String
-  ) {
-    onDeleteUser(filter: $filter, owner: $owner) {
-      createdAt
-      email
-      favoriteFeeds
-      id
-      isAdmin
-      owner
+      text
       updatedAt
       __typename
     }
@@ -170,10 +317,53 @@ export const onDeleteWebsite = /* GraphQL */ `
     onDeleteWebsite(filter: $filter, owner: $owner) {
       category
       createdAt
+      feeds {
+        nextToken
+        __typename
+      }
       id
       name
       owner
       tags
+      updatedAt
+      url
+      websiteId
+      __typename
+    }
+  }
+`;
+export const onUpdateArticle = /* GraphQL */ `
+  subscription OnUpdateArticle(
+    $filter: ModelSubscriptionArticleFilterInput
+    $owner: String
+  ) {
+    onUpdateArticle(filter: $filter, owner: $owner) {
+      articleId
+      createdAt
+      feed {
+        createdAt
+        description
+        feedId
+        id
+        name
+        owner
+        tags
+        type
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      feedId
+      fullText
+      id
+      owner
+      summaries {
+        nextToken
+        __typename
+      }
+      tags
+      title
       updatedAt
       url
       __typename
@@ -186,15 +376,56 @@ export const onUpdateFeed = /* GraphQL */ `
     $owner: String
   ) {
     onUpdateFeed(filter: $filter, owner: $owner) {
+      articles {
+        nextToken
+        __typename
+      }
+      createdAt
+      description
+      feedId
+      id
+      name
+      owner
+      tags
+      type
+      updatedAt
+      url
+      website {
+        category
+        createdAt
+        id
+        name
+        owner
+        tags
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      websiteId
+      __typename
+    }
+  }
+`;
+export const onUpdateSummarizer = /* GraphQL */ `
+  subscription OnUpdateSummarizer(
+    $filter: ModelSubscriptionSummarizerFilterInput
+    $owner: String
+  ) {
+    onUpdateSummarizer(filter: $filter, owner: $owner) {
       createdAt
       description
       id
       name
       owner
-      type
+      summaries {
+        nextToken
+        __typename
+      }
+      summarizerId
+      tags
+      tier
       updatedAt
-      url
-      websiteId
       __typename
     }
   }
@@ -205,47 +436,39 @@ export const onUpdateSummary = /* GraphQL */ `
     $owner: String
   ) {
     onUpdateSummary(filter: $filter, owner: $owner) {
-      articleUrl
+      article {
+        articleId
+        createdAt
+        feedId
+        fullText
+        id
+        owner
+        tags
+        title
+        updatedAt
+        url
+        __typename
+      }
+      articleId
       createdAt
-      fullText
       id
       owner
-      summary
+      summarizer {
+        createdAt
+        description
+        id
+        name
+        owner
+        summarizerId
+        tags
+        tier
+        updatedAt
+        __typename
+      }
+      summarizerId
+      summaryId
       tags
-      title
-      updatedAt
-      userId
-      __typename
-    }
-  }
-`;
-export const onUpdateTodo = /* GraphQL */ `
-  subscription OnUpdateTodo(
-    $filter: ModelSubscriptionTodoFilterInput
-    $owner: String
-  ) {
-    onUpdateTodo(filter: $filter, owner: $owner) {
-      content
-      createdAt
-      id
-      owner
-      updatedAt
-      __typename
-    }
-  }
-`;
-export const onUpdateUser = /* GraphQL */ `
-  subscription OnUpdateUser(
-    $filter: ModelSubscriptionUserFilterInput
-    $owner: String
-  ) {
-    onUpdateUser(filter: $filter, owner: $owner) {
-      createdAt
-      email
-      favoriteFeeds
-      id
-      isAdmin
-      owner
+      text
       updatedAt
       __typename
     }
@@ -259,12 +482,17 @@ export const onUpdateWebsite = /* GraphQL */ `
     onUpdateWebsite(filter: $filter, owner: $owner) {
       category
       createdAt
+      feeds {
+        nextToken
+        __typename
+      }
       id
       name
       owner
       tags
       updatedAt
       url
+      websiteId
       __typename
     }
   }

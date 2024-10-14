@@ -2,18 +2,96 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
+export const extractUrls = /* GraphQL */ `
+  query ExtractUrls($url: String) {
+    extractUrls(url: $url)
+  }
+`;
+export const getArticle = /* GraphQL */ `
+  query GetArticle($id: ID!) {
+    getArticle(id: $id) {
+      articleId
+      createdAt
+      feed {
+        createdAt
+        description
+        feedId
+        id
+        name
+        owner
+        tags
+        type
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      feedId
+      fullText
+      id
+      owner
+      summaries {
+        nextToken
+        __typename
+      }
+      tags
+      title
+      updatedAt
+      url
+      __typename
+    }
+  }
+`;
 export const getFeed = /* GraphQL */ `
   query GetFeed($id: ID!) {
     getFeed(id: $id) {
+      articles {
+        nextToken
+        __typename
+      }
+      createdAt
+      description
+      feedId
+      id
+      name
+      owner
+      tags
+      type
+      updatedAt
+      url
+      website {
+        category
+        createdAt
+        id
+        name
+        owner
+        tags
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      websiteId
+      __typename
+    }
+  }
+`;
+export const getSummarizer = /* GraphQL */ `
+  query GetSummarizer($id: ID!) {
+    getSummarizer(id: $id) {
       createdAt
       description
       id
       name
       owner
-      type
+      summaries {
+        nextToken
+        __typename
+      }
+      summarizerId
+      tags
+      tier
       updatedAt
-      url
-      websiteId
       __typename
     }
   }
@@ -21,41 +99,39 @@ export const getFeed = /* GraphQL */ `
 export const getSummary = /* GraphQL */ `
   query GetSummary($id: ID!) {
     getSummary(id: $id) {
-      articleUrl
+      article {
+        articleId
+        createdAt
+        feedId
+        fullText
+        id
+        owner
+        tags
+        title
+        updatedAt
+        url
+        __typename
+      }
+      articleId
       createdAt
-      fullText
       id
       owner
-      summary
+      summarizer {
+        createdAt
+        description
+        id
+        name
+        owner
+        summarizerId
+        tags
+        tier
+        updatedAt
+        __typename
+      }
+      summarizerId
+      summaryId
       tags
-      title
-      updatedAt
-      userId
-      __typename
-    }
-  }
-`;
-export const getTodo = /* GraphQL */ `
-  query GetTodo($id: ID!) {
-    getTodo(id: $id) {
-      content
-      createdAt
-      id
-      owner
-      updatedAt
-      __typename
-    }
-  }
-`;
-export const getUser = /* GraphQL */ `
-  query GetUser($id: ID!) {
-    getUser(id: $id) {
-      createdAt
-      email
-      favoriteFeeds
-      id
-      isAdmin
-      owner
+      text
       updatedAt
       __typename
     }
@@ -66,12 +142,42 @@ export const getWebsite = /* GraphQL */ `
     getWebsite(id: $id) {
       category
       createdAt
+      feeds {
+        nextToken
+        __typename
+      }
       id
       name
       owner
       tags
       updatedAt
       url
+      websiteId
+      __typename
+    }
+  }
+`;
+export const listArticles = /* GraphQL */ `
+  query ListArticles(
+    $filter: ModelArticleFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listArticles(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        articleId
+        createdAt
+        feedId
+        fullText
+        id
+        owner
+        tags
+        title
+        updatedAt
+        url
+        __typename
+      }
+      nextToken
       __typename
     }
   }
@@ -86,9 +192,11 @@ export const listFeeds = /* GraphQL */ `
       items {
         createdAt
         description
+        feedId
         id
         name
         owner
+        tags
         type
         updatedAt
         url
@@ -108,35 +216,14 @@ export const listSummaries = /* GraphQL */ `
   ) {
     listSummaries(filter: $filter, limit: $limit, nextToken: $nextToken) {
       items {
-        articleUrl
+        articleId
         createdAt
-        fullText
         id
         owner
-        summary
+        summarizerId
+        summaryId
         tags
-        title
-        updatedAt
-        userId
-        __typename
-      }
-      nextToken
-      __typename
-    }
-  }
-`;
-export const listTodos = /* GraphQL */ `
-  query ListTodos(
-    $filter: ModelTodoFilterInput
-    $limit: Int
-    $nextToken: String
-  ) {
-    listTodos(filter: $filter, limit: $limit, nextToken: $nextToken) {
-      items {
-        content
-        createdAt
-        id
-        owner
+        text
         updatedAt
         __typename
       }
@@ -145,20 +232,22 @@ export const listTodos = /* GraphQL */ `
     }
   }
 `;
-export const listUsers = /* GraphQL */ `
-  query ListUsers(
-    $filter: ModelUserFilterInput
+export const listSummarizers = /* GraphQL */ `
+  query ListSummarizers(
+    $filter: ModelSummarizerFilterInput
     $limit: Int
     $nextToken: String
   ) {
-    listUsers(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    listSummarizers(filter: $filter, limit: $limit, nextToken: $nextToken) {
       items {
         createdAt
-        email
-        favoriteFeeds
+        description
         id
-        isAdmin
+        name
         owner
+        summarizerId
+        tags
+        tier
         updatedAt
         __typename
       }
@@ -183,10 +272,21 @@ export const listWebsites = /* GraphQL */ `
         tags
         updatedAt
         url
+        websiteId
         __typename
       }
       nextToken
       __typename
     }
+  }
+`;
+export const sayHello = /* GraphQL */ `
+  query SayHello($name: String) {
+    sayHello(name: $name)
+  }
+`;
+export const summarize = /* GraphQL */ `
+  query Summarize($text: String) {
+    summarize(text: $text)
   }
 `;

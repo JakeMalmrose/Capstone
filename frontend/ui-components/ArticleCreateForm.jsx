@@ -9,14 +9,13 @@ import {
   Grid,
   Icon,
   ScrollView,
-  SelectField,
   Text,
   TextField,
   useTheme,
 } from "@aws-amplify/ui-react";
 import { fetchByPath, getOverrideProps, validateField } from "./utils";
 import { generateClient } from "aws-amplify/api";
-import { createFeed } from "./graphql/mutations";
+import { createArticle } from "./graphql/mutations";
 const client = generateClient();
 function ArrayField({
   items = [],
@@ -173,7 +172,7 @@ function ArrayField({
     </React.Fragment>
   );
 }
-export default function FeedCreateForm(props) {
+export default function ArticleCreateForm(props) {
   const {
     clearOnSuccess = true,
     onSuccess,
@@ -185,41 +184,39 @@ export default function FeedCreateForm(props) {
     ...rest
   } = props;
   const initialValues = {
-    feedId: "",
-    name: "",
+    articleId: "",
     url: "",
-    description: "",
-    type: "",
+    title: "",
+    fullText: "",
     tags: [],
+    createdAt: "",
   };
-  const [feedId, setFeedId] = React.useState(initialValues.feedId);
-  const [name, setName] = React.useState(initialValues.name);
+  const [articleId, setArticleId] = React.useState(initialValues.articleId);
   const [url, setUrl] = React.useState(initialValues.url);
-  const [description, setDescription] = React.useState(
-    initialValues.description
-  );
-  const [type, setType] = React.useState(initialValues.type);
+  const [title, setTitle] = React.useState(initialValues.title);
+  const [fullText, setFullText] = React.useState(initialValues.fullText);
   const [tags, setTags] = React.useState(initialValues.tags);
+  const [createdAt, setCreatedAt] = React.useState(initialValues.createdAt);
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
-    setFeedId(initialValues.feedId);
-    setName(initialValues.name);
+    setArticleId(initialValues.articleId);
     setUrl(initialValues.url);
-    setDescription(initialValues.description);
-    setType(initialValues.type);
+    setTitle(initialValues.title);
+    setFullText(initialValues.fullText);
     setTags(initialValues.tags);
     setCurrentTagsValue("");
+    setCreatedAt(initialValues.createdAt);
     setErrors({});
   };
   const [currentTagsValue, setCurrentTagsValue] = React.useState("");
   const tagsRef = React.createRef();
   const validations = {
-    feedId: [{ type: "Required" }],
-    name: [{ type: "Required" }],
+    articleId: [{ type: "Required" }],
     url: [{ type: "Required" }],
-    description: [],
-    type: [],
+    title: [{ type: "Required" }],
+    fullText: [{ type: "Required" }],
     tags: [],
+    createdAt: [],
   };
   const runValidationTasks = async (
     fieldName,
@@ -238,6 +235,23 @@ export default function FeedCreateForm(props) {
     setErrors((errors) => ({ ...errors, [fieldName]: validationResponse }));
     return validationResponse;
   };
+  const convertToLocal = (date) => {
+    const df = new Intl.DateTimeFormat("default", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      calendar: "iso8601",
+      numberingSystem: "latn",
+      hourCycle: "h23",
+    });
+    const parts = df.formatToParts(date).reduce((acc, part) => {
+      acc[part.type] = part.value;
+      return acc;
+    }, {});
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+  };
   return (
     <Grid
       as="form"
@@ -247,12 +261,12 @@ export default function FeedCreateForm(props) {
       onSubmit={async (event) => {
         event.preventDefault();
         let modelFields = {
-          feedId,
-          name,
+          articleId,
           url,
-          description,
-          type,
+          title,
+          fullText,
           tags,
+          createdAt,
         };
         const validationResponses = await Promise.all(
           Object.keys(validations).reduce((promises, fieldName) => {
@@ -283,7 +297,7 @@ export default function FeedCreateForm(props) {
             }
           });
           await client.graphql({
-            query: createFeed.replaceAll("__typename", ""),
+            query: createArticle.replaceAll("__typename", ""),
             variables: {
               input: {
                 ...modelFields,
@@ -303,66 +317,37 @@ export default function FeedCreateForm(props) {
           }
         }
       }}
-      {...getOverrideProps(overrides, "FeedCreateForm")}
+      {...getOverrideProps(overrides, "ArticleCreateForm")}
       {...rest}
     >
       <TextField
-        label="Feed id"
+        label="Article id"
         isRequired={true}
         isReadOnly={false}
-        value={feedId}
+        value={articleId}
         onChange={(e) => {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              feedId: value,
-              name,
+              articleId: value,
               url,
-              description,
-              type,
+              title,
+              fullText,
               tags,
+              createdAt,
             };
             const result = onChange(modelFields);
-            value = result?.feedId ?? value;
+            value = result?.articleId ?? value;
           }
-          if (errors.feedId?.hasError) {
-            runValidationTasks("feedId", value);
+          if (errors.articleId?.hasError) {
+            runValidationTasks("articleId", value);
           }
-          setFeedId(value);
+          setArticleId(value);
         }}
-        onBlur={() => runValidationTasks("feedId", feedId)}
-        errorMessage={errors.feedId?.errorMessage}
-        hasError={errors.feedId?.hasError}
-        {...getOverrideProps(overrides, "feedId")}
-      ></TextField>
-      <TextField
-        label="Name"
-        isRequired={true}
-        isReadOnly={false}
-        value={name}
-        onChange={(e) => {
-          let { value } = e.target;
-          if (onChange) {
-            const modelFields = {
-              feedId,
-              name: value,
-              url,
-              description,
-              type,
-              tags,
-            };
-            const result = onChange(modelFields);
-            value = result?.name ?? value;
-          }
-          if (errors.name?.hasError) {
-            runValidationTasks("name", value);
-          }
-          setName(value);
-        }}
-        onBlur={() => runValidationTasks("name", name)}
-        errorMessage={errors.name?.errorMessage}
-        hasError={errors.name?.hasError}
-        {...getOverrideProps(overrides, "name")}
+        onBlur={() => runValidationTasks("articleId", articleId)}
+        errorMessage={errors.articleId?.errorMessage}
+        hasError={errors.articleId?.hasError}
+        {...getOverrideProps(overrides, "articleId")}
       ></TextField>
       <TextField
         label="Url"
@@ -373,12 +358,12 @@ export default function FeedCreateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              feedId,
-              name,
+              articleId,
               url: value,
-              description,
-              type,
+              title,
+              fullText,
               tags,
+              createdAt,
             };
             const result = onChange(modelFields);
             value = result?.url ?? value;
@@ -394,85 +379,74 @@ export default function FeedCreateForm(props) {
         {...getOverrideProps(overrides, "url")}
       ></TextField>
       <TextField
-        label="Description"
-        isRequired={false}
+        label="Title"
+        isRequired={true}
         isReadOnly={false}
-        value={description}
+        value={title}
         onChange={(e) => {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              feedId,
-              name,
+              articleId,
               url,
-              description: value,
-              type,
+              title: value,
+              fullText,
               tags,
+              createdAt,
             };
             const result = onChange(modelFields);
-            value = result?.description ?? value;
+            value = result?.title ?? value;
           }
-          if (errors.description?.hasError) {
-            runValidationTasks("description", value);
+          if (errors.title?.hasError) {
+            runValidationTasks("title", value);
           }
-          setDescription(value);
+          setTitle(value);
         }}
-        onBlur={() => runValidationTasks("description", description)}
-        errorMessage={errors.description?.errorMessage}
-        hasError={errors.description?.hasError}
-        {...getOverrideProps(overrides, "description")}
+        onBlur={() => runValidationTasks("title", title)}
+        errorMessage={errors.title?.errorMessage}
+        hasError={errors.title?.hasError}
+        {...getOverrideProps(overrides, "title")}
       ></TextField>
-      <SelectField
-        label="Type"
-        placeholder="Please select an option"
-        isDisabled={false}
-        value={type}
+      <TextField
+        label="Full text"
+        isRequired={true}
+        isReadOnly={false}
+        value={fullText}
         onChange={(e) => {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              feedId,
-              name,
+              articleId,
               url,
-              description,
-              type: value,
+              title,
+              fullText: value,
               tags,
+              createdAt,
             };
             const result = onChange(modelFields);
-            value = result?.type ?? value;
+            value = result?.fullText ?? value;
           }
-          if (errors.type?.hasError) {
-            runValidationTasks("type", value);
+          if (errors.fullText?.hasError) {
+            runValidationTasks("fullText", value);
           }
-          setType(value);
+          setFullText(value);
         }}
-        onBlur={() => runValidationTasks("type", type)}
-        errorMessage={errors.type?.errorMessage}
-        hasError={errors.type?.hasError}
-        {...getOverrideProps(overrides, "type")}
-      >
-        <option
-          children="Rss"
-          value="RSS"
-          {...getOverrideProps(overrides, "typeoption0")}
-        ></option>
-        <option
-          children="Other"
-          value="OTHER"
-          {...getOverrideProps(overrides, "typeoption1")}
-        ></option>
-      </SelectField>
+        onBlur={() => runValidationTasks("fullText", fullText)}
+        errorMessage={errors.fullText?.errorMessage}
+        hasError={errors.fullText?.hasError}
+        {...getOverrideProps(overrides, "fullText")}
+      ></TextField>
       <ArrayField
         onChange={async (items) => {
           let values = items;
           if (onChange) {
             const modelFields = {
-              feedId,
-              name,
+              articleId,
               url,
-              description,
-              type,
+              title,
+              fullText,
               tags: values,
+              createdAt,
             };
             const result = onChange(modelFields);
             values = result?.tags ?? values;
@@ -512,6 +486,37 @@ export default function FeedCreateForm(props) {
           {...getOverrideProps(overrides, "tags")}
         ></TextField>
       </ArrayField>
+      <TextField
+        label="Created at"
+        isRequired={false}
+        isReadOnly={false}
+        type="datetime-local"
+        value={createdAt && convertToLocal(new Date(createdAt))}
+        onChange={(e) => {
+          let value =
+            e.target.value === "" ? "" : new Date(e.target.value).toISOString();
+          if (onChange) {
+            const modelFields = {
+              articleId,
+              url,
+              title,
+              fullText,
+              tags,
+              createdAt: value,
+            };
+            const result = onChange(modelFields);
+            value = result?.createdAt ?? value;
+          }
+          if (errors.createdAt?.hasError) {
+            runValidationTasks("createdAt", value);
+          }
+          setCreatedAt(value);
+        }}
+        onBlur={() => runValidationTasks("createdAt", createdAt)}
+        errorMessage={errors.createdAt?.errorMessage}
+        hasError={errors.createdAt?.hasError}
+        {...getOverrideProps(overrides, "createdAt")}
+      ></TextField>
       <Flex
         justifyContent="space-between"
         {...getOverrideProps(overrides, "CTAFlex")}

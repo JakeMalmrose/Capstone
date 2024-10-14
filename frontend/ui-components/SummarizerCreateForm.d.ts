@@ -15,40 +15,37 @@ export declare type ValidationResponse = {
     errorMessage?: string;
 };
 export declare type ValidationFunction<T> = (value: T, validationResponse: ValidationResponse) => ValidationResponse | Promise<ValidationResponse>;
-export declare type FeedCreateFormInputValues = {
-    feedId?: string;
+export declare type SummarizerCreateFormInputValues = {
+    summarizerId?: string;
     name?: string;
-    url?: string;
     description?: string;
-    type?: string;
     tags?: string[];
+    tier?: string;
 };
-export declare type FeedCreateFormValidationValues = {
-    feedId?: ValidationFunction<string>;
+export declare type SummarizerCreateFormValidationValues = {
+    summarizerId?: ValidationFunction<string>;
     name?: ValidationFunction<string>;
-    url?: ValidationFunction<string>;
     description?: ValidationFunction<string>;
-    type?: ValidationFunction<string>;
     tags?: ValidationFunction<string>;
+    tier?: ValidationFunction<string>;
 };
 export declare type PrimitiveOverrideProps<T> = Partial<T> & React.DOMAttributes<HTMLDivElement>;
-export declare type FeedCreateFormOverridesProps = {
-    FeedCreateFormGrid?: PrimitiveOverrideProps<GridProps>;
-    feedId?: PrimitiveOverrideProps<TextFieldProps>;
+export declare type SummarizerCreateFormOverridesProps = {
+    SummarizerCreateFormGrid?: PrimitiveOverrideProps<GridProps>;
+    summarizerId?: PrimitiveOverrideProps<TextFieldProps>;
     name?: PrimitiveOverrideProps<TextFieldProps>;
-    url?: PrimitiveOverrideProps<TextFieldProps>;
     description?: PrimitiveOverrideProps<TextFieldProps>;
-    type?: PrimitiveOverrideProps<SelectFieldProps>;
     tags?: PrimitiveOverrideProps<TextFieldProps>;
+    tier?: PrimitiveOverrideProps<SelectFieldProps>;
 } & EscapeHatchProps;
-export declare type FeedCreateFormProps = React.PropsWithChildren<{
-    overrides?: FeedCreateFormOverridesProps | undefined | null;
+export declare type SummarizerCreateFormProps = React.PropsWithChildren<{
+    overrides?: SummarizerCreateFormOverridesProps | undefined | null;
 } & {
     clearOnSuccess?: boolean;
-    onSubmit?: (fields: FeedCreateFormInputValues) => FeedCreateFormInputValues;
-    onSuccess?: (fields: FeedCreateFormInputValues) => void;
-    onError?: (fields: FeedCreateFormInputValues, errorMessage: string) => void;
-    onChange?: (fields: FeedCreateFormInputValues) => FeedCreateFormInputValues;
-    onValidate?: FeedCreateFormValidationValues;
+    onSubmit?: (fields: SummarizerCreateFormInputValues) => SummarizerCreateFormInputValues;
+    onSuccess?: (fields: SummarizerCreateFormInputValues) => void;
+    onError?: (fields: SummarizerCreateFormInputValues, errorMessage: string) => void;
+    onChange?: (fields: SummarizerCreateFormInputValues) => SummarizerCreateFormInputValues;
+    onValidate?: SummarizerCreateFormValidationValues;
 } & React.CSSProperties>;
-export default function FeedCreateForm(props: FeedCreateFormProps): React.ReactElement;
+export default function SummarizerCreateForm(props: SummarizerCreateFormProps): React.ReactElement;

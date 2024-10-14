@@ -186,11 +186,13 @@ export default function WebsiteUpdateForm(props) {
     ...rest
   } = props;
   const initialValues = {
+    websiteId: "",
     name: "",
     url: "",
     category: "",
     tags: [],
   };
+  const [websiteId, setWebsiteId] = React.useState(initialValues.websiteId);
   const [name, setName] = React.useState(initialValues.name);
   const [url, setUrl] = React.useState(initialValues.url);
   const [category, setCategory] = React.useState(initialValues.category);
@@ -200,6 +202,7 @@ export default function WebsiteUpdateForm(props) {
     const cleanValues = websiteRecord
       ? { ...initialValues, ...websiteRecord }
       : initialValues;
+    setWebsiteId(cleanValues.websiteId);
     setName(cleanValues.name);
     setUrl(cleanValues.url);
     setCategory(cleanValues.category);
@@ -226,6 +229,7 @@ export default function WebsiteUpdateForm(props) {
   const [currentTagsValue, setCurrentTagsValue] = React.useState("");
   const tagsRef = React.createRef();
   const validations = {
+    websiteId: [{ type: "Required" }],
     name: [{ type: "Required" }],
     url: [{ type: "Required" }],
     category: [],
@@ -257,6 +261,7 @@ export default function WebsiteUpdateForm(props) {
       onSubmit={async (event) => {
         event.preventDefault();
         let modelFields = {
+          websiteId,
           name,
           url,
           category: category ?? null,
@@ -313,6 +318,34 @@ export default function WebsiteUpdateForm(props) {
       {...rest}
     >
       <TextField
+        label="Website id"
+        isRequired={true}
+        isReadOnly={false}
+        value={websiteId}
+        onChange={(e) => {
+          let { value } = e.target;
+          if (onChange) {
+            const modelFields = {
+              websiteId: value,
+              name,
+              url,
+              category,
+              tags,
+            };
+            const result = onChange(modelFields);
+            value = result?.websiteId ?? value;
+          }
+          if (errors.websiteId?.hasError) {
+            runValidationTasks("websiteId", value);
+          }
+          setWebsiteId(value);
+        }}
+        onBlur={() => runValidationTasks("websiteId", websiteId)}
+        errorMessage={errors.websiteId?.errorMessage}
+        hasError={errors.websiteId?.hasError}
+        {...getOverrideProps(overrides, "websiteId")}
+      ></TextField>
+      <TextField
         label="Name"
         isRequired={true}
         isReadOnly={false}
@@ -321,6 +354,7 @@ export default function WebsiteUpdateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
+              websiteId,
               name: value,
               url,
               category,
@@ -348,6 +382,7 @@ export default function WebsiteUpdateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
+              websiteId,
               name,
               url: value,
               category,
@@ -375,6 +410,7 @@ export default function WebsiteUpdateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
+              websiteId,
               name,
               url,
               category: value,
@@ -398,6 +434,7 @@ export default function WebsiteUpdateForm(props) {
           let values = items;
           if (onChange) {
             const modelFields = {
+              websiteId,
               name,
               url,
               category,

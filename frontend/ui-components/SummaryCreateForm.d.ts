@@ -16,33 +16,24 @@ export declare type ValidationResponse = {
 };
 export declare type ValidationFunction<T> = (value: T, validationResponse: ValidationResponse) => ValidationResponse | Promise<ValidationResponse>;
 export declare type SummaryCreateFormInputValues = {
-    articleUrl?: string;
-    title?: string;
-    fullText?: string;
-    summary?: string;
+    summaryId?: string;
+    text?: string;
     tags?: string[];
     createdAt?: string;
-    userId?: string;
 };
 export declare type SummaryCreateFormValidationValues = {
-    articleUrl?: ValidationFunction<string>;
-    title?: ValidationFunction<string>;
-    fullText?: ValidationFunction<string>;
-    summary?: ValidationFunction<string>;
+    summaryId?: ValidationFunction<string>;
+    text?: ValidationFunction<string>;
     tags?: ValidationFunction<string>;
     createdAt?: ValidationFunction<string>;
-    userId?: ValidationFunction<string>;
 };
 export declare type PrimitiveOverrideProps<T> = Partial<T> & React.DOMAttributes<HTMLDivElement>;
 export declare type SummaryCreateFormOverridesProps = {
     SummaryCreateFormGrid?: PrimitiveOverrideProps<GridProps>;
-    articleUrl?: PrimitiveOverrideProps<TextFieldProps>;
-    title?: PrimitiveOverrideProps<TextFieldProps>;
-    fullText?: PrimitiveOverrideProps<TextFieldProps>;
-    summary?: PrimitiveOverrideProps<TextFieldProps>;
+    summaryId?: PrimitiveOverrideProps<TextFieldProps>;
+    text?: PrimitiveOverrideProps<TextFieldProps>;
     tags?: PrimitiveOverrideProps<TextFieldProps>;
     createdAt?: PrimitiveOverrideProps<TextFieldProps>;
-    userId?: PrimitiveOverrideProps<TextFieldProps>;
 } & EscapeHatchProps;
 export declare type SummaryCreateFormProps = React.PropsWithChildren<{
     overrides?: SummaryCreateFormOverridesProps | undefined | null;

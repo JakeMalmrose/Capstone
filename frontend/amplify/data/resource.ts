@@ -30,39 +30,72 @@ const schema = a.schema({
     .authorization(allow => [allow.authenticated()])
     .handler(a.handler.function(extractUrls)),
 
-  //other things
-  Summary: a
-    .model({
-      articleUrl: a.string().required(),
-      title: a.string().required(),
-      fullText: a.string().required(),
-      summary: a.string().required(),
-      tags: a.string().array(),
-      createdAt: a.datetime(),
-      userId: a.string(),
-      websiteId: a.string(),
-    })
-    .authorization(allow => [allow.owner(), allow.authenticated().to(["read"])]),
-
+  //data models
   Website: a
-    .model({
-      name: a.string().required(),
-      url: a.string().required(),
-      category: a.string(),
-      tags: a.string().array(),
-    })
-    .authorization(allow => [allow.owner(), allow.authenticated().to(["read"])]),
-
+  .model({
+    websiteId: a.id().required(),
+    name: a.string().required(),
+    url: a.string().required(),
+    category: a.string(),
+    tags: a.string().array(),
+    feeds: a.hasMany("Feed", "websiteId"),
+  })
+  .authorization(allow => [allow.owner(), allow.authenticated().to(["read"]), allow.groups(["Admin"])]),
+  
   Feed: a
     .model({
+      feedId: a.id().required(),
+      name: a.string().required(),
+      url: a.string().required(),
+      description: a.string(),
+      type: a.enum(['RSS', 'OTHER']),
+      tags: a.string().array(),
+      websiteId: a.id(),
+      website: a.belongsTo("Website", "websiteId"),
+      articles: a.hasMany("Article", "feedId"),
+    })
+    .authorization(allow => [allow.owner(), allow.authenticated().to(["read"])]),
+
+  Article: a
+    .model({
+      articleId: a.id().required(),
+      url: a.string().required(),
+      title: a.string().required(),
+      fullText: a.string().required(),
+      tags: a.string().array(),
+      createdAt: a.datetime(),
+      feedId: a.id(),
+      feed: a.belongsTo("Feed", "feedId"),
+      summaries: a.hasMany("Summary", "articleId"),
+    })
+    .authorization(allow => [allow.owner(), allow.authenticated().to(["read"])]),
+
+  Summary: a
+    .model({
+      summaryId: a.id().required(),
+      text: a.string().required(),
+      tags: a.string().array(),
+      createdAt: a.datetime(),
+      summarizerId: a.id(),
+      summarizer: a.belongsTo("Summarizer", "summarizerId"),
+      articleId: a.id(),
+      article: a.belongsTo("Article", "articleId"),
+    })
+    .authorization(allow => [allow.owner(), allow.authenticated().to(["read"])]),
+
+  Summarizer: a
+    .model({
+      summarizerId: a.id().required(),
       name: a.string().required(),
       description: a.string(),
-      url: a.string().required(),
-      type: a.enum(['RSS', 'OTHER']),
-      websiteId: a.string(),
+      tags: a.string().array(),
+      tier: a.enum(['FREE', 'PRO']),
+      summaries: a.hasMany("Summary", "summarizerId"),
     })
-    .authorization(allow => [allow.owner(), allow.authenticated().to(["read"])])
-});
+    .authorization(allow => [allow.owner(), allow.authenticated().to(["read"]), allow.groups(["Admin"])])
+  });
+
+  
 
 export type Schema = ClientSchema<typeof schema>;
 

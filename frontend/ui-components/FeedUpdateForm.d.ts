@@ -17,27 +17,30 @@ export declare type ValidationResponse = {
 };
 export declare type ValidationFunction<T> = (value: T, validationResponse: ValidationResponse) => ValidationResponse | Promise<ValidationResponse>;
 export declare type FeedUpdateFormInputValues = {
+    feedId?: string;
     name?: string;
-    description?: string;
     url?: string;
+    description?: string;
     type?: string;
-    websiteId?: string;
+    tags?: string[];
 };
 export declare type FeedUpdateFormValidationValues = {
+    feedId?: ValidationFunction<string>;
     name?: ValidationFunction<string>;
-    description?: ValidationFunction<string>;
     url?: ValidationFunction<string>;
+    description?: ValidationFunction<string>;
     type?: ValidationFunction<string>;
-    websiteId?: ValidationFunction<string>;
+    tags?: ValidationFunction<string>;
 };
 export declare type PrimitiveOverrideProps<T> = Partial<T> & React.DOMAttributes<HTMLDivElement>;
 export declare type FeedUpdateFormOverridesProps = {
     FeedUpdateFormGrid?: PrimitiveOverrideProps<GridProps>;
+    feedId?: PrimitiveOverrideProps<TextFieldProps>;
     name?: PrimitiveOverrideProps<TextFieldProps>;
-    description?: PrimitiveOverrideProps<TextFieldProps>;
     url?: PrimitiveOverrideProps<TextFieldProps>;
+    description?: PrimitiveOverrideProps<TextFieldProps>;
     type?: PrimitiveOverrideProps<SelectFieldProps>;
-    websiteId?: PrimitiveOverrideProps<TextFieldProps>;
+    tags?: PrimitiveOverrideProps<TextFieldProps>;
 } & EscapeHatchProps;
 export declare type FeedUpdateFormProps = React.PropsWithChildren<{
     overrides?: FeedUpdateFormOverridesProps | undefined | null;

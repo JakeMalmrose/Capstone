@@ -16,7 +16,8 @@ import {
 } from "@aws-amplify/ui-react";
 import { fetchByPath, getOverrideProps, validateField } from "./utils";
 import { generateClient } from "aws-amplify/api";
-import { createFeed } from "./graphql/mutations";
+import { getSummarizer } from "./graphql/queries";
+import { updateSummarizer } from "./graphql/mutations";
 const client = generateClient();
 function ArrayField({
   items = [],
@@ -173,9 +174,10 @@ function ArrayField({
     </React.Fragment>
   );
 }
-export default function FeedCreateForm(props) {
+export default function SummarizerUpdateForm(props) {
   const {
-    clearOnSuccess = true,
+    id: idProp,
+    summarizer: summarizerModelProp,
     onSuccess,
     onError,
     onSubmit,
@@ -185,41 +187,59 @@ export default function FeedCreateForm(props) {
     ...rest
   } = props;
   const initialValues = {
-    feedId: "",
+    summarizerId: "",
     name: "",
-    url: "",
     description: "",
-    type: "",
     tags: [],
+    tier: "",
   };
-  const [feedId, setFeedId] = React.useState(initialValues.feedId);
+  const [summarizerId, setSummarizerId] = React.useState(
+    initialValues.summarizerId
+  );
   const [name, setName] = React.useState(initialValues.name);
-  const [url, setUrl] = React.useState(initialValues.url);
   const [description, setDescription] = React.useState(
     initialValues.description
   );
-  const [type, setType] = React.useState(initialValues.type);
   const [tags, setTags] = React.useState(initialValues.tags);
+  const [tier, setTier] = React.useState(initialValues.tier);
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
-    setFeedId(initialValues.feedId);
-    setName(initialValues.name);
-    setUrl(initialValues.url);
-    setDescription(initialValues.description);
-    setType(initialValues.type);
-    setTags(initialValues.tags);
+    const cleanValues = summarizerRecord
+      ? { ...initialValues, ...summarizerRecord }
+      : initialValues;
+    setSummarizerId(cleanValues.summarizerId);
+    setName(cleanValues.name);
+    setDescription(cleanValues.description);
+    setTags(cleanValues.tags ?? []);
     setCurrentTagsValue("");
+    setTier(cleanValues.tier);
     setErrors({});
   };
+  const [summarizerRecord, setSummarizerRecord] =
+    React.useState(summarizerModelProp);
+  React.useEffect(() => {
+    const queryData = async () => {
+      const record = idProp
+        ? (
+            await client.graphql({
+              query: getSummarizer.replaceAll("__typename", ""),
+              variables: { id: idProp },
+            })
+          )?.data?.getSummarizer
+        : summarizerModelProp;
+      setSummarizerRecord(record);
+    };
+    queryData();
+  }, [idProp, summarizerModelProp]);
+  React.useEffect(resetStateValues, [summarizerRecord]);
   const [currentTagsValue, setCurrentTagsValue] = React.useState("");
   const tagsRef = React.createRef();
   const validations = {
-    feedId: [{ type: "Required" }],
+    summarizerId: [{ type: "Required" }],
     name: [{ type: "Required" }],
-    url: [{ type: "Required" }],
     description: [],
-    type: [],
     tags: [],
+    tier: [],
   };
   const runValidationTasks = async (
     fieldName,
@@ -247,12 +267,11 @@ export default function FeedCreateForm(props) {
       onSubmit={async (event) => {
         event.preventDefault();
         let modelFields = {
-          feedId,
+          summarizerId,
           name,
-          url,
-          description,
-          type,
-          tags,
+          description: description ?? null,
+          tags: tags ?? null,
+          tier: tier ?? null,
         };
         const validationResponses = await Promise.all(
           Object.keys(validations).reduce((promises, fieldName) => {
@@ -283,18 +302,16 @@ export default function FeedCreateForm(props) {
             }
           });
           await client.graphql({
-            query: createFeed.replaceAll("__typename", ""),
+            query: updateSummarizer.replaceAll("__typename", ""),
             variables: {
               input: {
+                id: summarizerRecord.id,
                 ...modelFields,
               },
             },
           });
           if (onSuccess) {
             onSuccess(modelFields);
-          }
-          if (clearOnSuccess) {
-            resetStateValues();
           }
         } catch (err) {
           if (onError) {
@@ -303,37 +320,36 @@ export default function FeedCreateForm(props) {
           }
         }
       }}
-      {...getOverrideProps(overrides, "FeedCreateForm")}
+      {...getOverrideProps(overrides, "SummarizerUpdateForm")}
       {...rest}
     >
       <TextField
-        label="Feed id"
+        label="Summarizer id"
         isRequired={true}
         isReadOnly={false}
-        value={feedId}
+        value={summarizerId}
         onChange={(e) => {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              feedId: value,
+              summarizerId: value,
               name,
-              url,
               description,
-              type,
               tags,
+              tier,
             };
             const result = onChange(modelFields);
-            value = result?.feedId ?? value;
+            value = result?.summarizerId ?? value;
           }
-          if (errors.feedId?.hasError) {
-            runValidationTasks("feedId", value);
+          if (errors.summarizerId?.hasError) {
+            runValidationTasks("summarizerId", value);
           }
-          setFeedId(value);
+          setSummarizerId(value);
         }}
-        onBlur={() => runValidationTasks("feedId", feedId)}
-        errorMessage={errors.feedId?.errorMessage}
-        hasError={errors.feedId?.hasError}
-        {...getOverrideProps(overrides, "feedId")}
+        onBlur={() => runValidationTasks("summarizerId", summarizerId)}
+        errorMessage={errors.summarizerId?.errorMessage}
+        hasError={errors.summarizerId?.hasError}
+        {...getOverrideProps(overrides, "summarizerId")}
       ></TextField>
       <TextField
         label="Name"
@@ -344,12 +360,11 @@ export default function FeedCreateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              feedId,
+              summarizerId,
               name: value,
-              url,
               description,
-              type,
               tags,
+              tier,
             };
             const result = onChange(modelFields);
             value = result?.name ?? value;
@@ -365,35 +380,6 @@ export default function FeedCreateForm(props) {
         {...getOverrideProps(overrides, "name")}
       ></TextField>
       <TextField
-        label="Url"
-        isRequired={true}
-        isReadOnly={false}
-        value={url}
-        onChange={(e) => {
-          let { value } = e.target;
-          if (onChange) {
-            const modelFields = {
-              feedId,
-              name,
-              url: value,
-              description,
-              type,
-              tags,
-            };
-            const result = onChange(modelFields);
-            value = result?.url ?? value;
-          }
-          if (errors.url?.hasError) {
-            runValidationTasks("url", value);
-          }
-          setUrl(value);
-        }}
-        onBlur={() => runValidationTasks("url", url)}
-        errorMessage={errors.url?.errorMessage}
-        hasError={errors.url?.hasError}
-        {...getOverrideProps(overrides, "url")}
-      ></TextField>
-      <TextField
         label="Description"
         isRequired={false}
         isReadOnly={false}
@@ -402,12 +388,11 @@ export default function FeedCreateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              feedId,
+              summarizerId,
               name,
-              url,
               description: value,
-              type,
               tags,
+              tier,
             };
             const result = onChange(modelFields);
             value = result?.description ?? value;
@@ -422,57 +407,16 @@ export default function FeedCreateForm(props) {
         hasError={errors.description?.hasError}
         {...getOverrideProps(overrides, "description")}
       ></TextField>
-      <SelectField
-        label="Type"
-        placeholder="Please select an option"
-        isDisabled={false}
-        value={type}
-        onChange={(e) => {
-          let { value } = e.target;
-          if (onChange) {
-            const modelFields = {
-              feedId,
-              name,
-              url,
-              description,
-              type: value,
-              tags,
-            };
-            const result = onChange(modelFields);
-            value = result?.type ?? value;
-          }
-          if (errors.type?.hasError) {
-            runValidationTasks("type", value);
-          }
-          setType(value);
-        }}
-        onBlur={() => runValidationTasks("type", type)}
-        errorMessage={errors.type?.errorMessage}
-        hasError={errors.type?.hasError}
-        {...getOverrideProps(overrides, "type")}
-      >
-        <option
-          children="Rss"
-          value="RSS"
-          {...getOverrideProps(overrides, "typeoption0")}
-        ></option>
-        <option
-          children="Other"
-          value="OTHER"
-          {...getOverrideProps(overrides, "typeoption1")}
-        ></option>
-      </SelectField>
       <ArrayField
         onChange={async (items) => {
           let values = items;
           if (onChange) {
             const modelFields = {
-              feedId,
+              summarizerId,
               name,
-              url,
               description,
-              type,
               tags: values,
+              tier,
             };
             const result = onChange(modelFields);
             values = result?.tags ?? values;
@@ -512,18 +456,58 @@ export default function FeedCreateForm(props) {
           {...getOverrideProps(overrides, "tags")}
         ></TextField>
       </ArrayField>
+      <SelectField
+        label="Tier"
+        placeholder="Please select an option"
+        isDisabled={false}
+        value={tier}
+        onChange={(e) => {
+          let { value } = e.target;
+          if (onChange) {
+            const modelFields = {
+              summarizerId,
+              name,
+              description,
+              tags,
+              tier: value,
+            };
+            const result = onChange(modelFields);
+            value = result?.tier ?? value;
+          }
+          if (errors.tier?.hasError) {
+            runValidationTasks("tier", value);
+          }
+          setTier(value);
+        }}
+        onBlur={() => runValidationTasks("tier", tier)}
+        errorMessage={errors.tier?.errorMessage}
+        hasError={errors.tier?.hasError}
+        {...getOverrideProps(overrides, "tier")}
+      >
+        <option
+          children="Free"
+          value="FREE"
+          {...getOverrideProps(overrides, "tieroption0")}
+        ></option>
+        <option
+          children="Pro"
+          value="PRO"
+          {...getOverrideProps(overrides, "tieroption1")}
+        ></option>
+      </SelectField>
       <Flex
         justifyContent="space-between"
         {...getOverrideProps(overrides, "CTAFlex")}
       >
         <Button
-          children="Clear"
+          children="Reset"
           type="reset"
           onClick={(event) => {
             event.preventDefault();
             resetStateValues();
           }}
-          {...getOverrideProps(overrides, "ClearButton")}
+          isDisabled={!(idProp || summarizerModelProp)}
+          {...getOverrideProps(overrides, "ResetButton")}
         ></Button>
         <Flex
           gap="15px"
@@ -533,7 +517,10 @@ export default function FeedCreateForm(props) {
             children="Submit"
             type="submit"
             variation="primary"
-            isDisabled={Object.values(errors).some((e) => e?.hasError)}
+            isDisabled={
+              !(idProp || summarizerModelProp) ||
+              Object.values(errors).some((e) => e?.hasError)
+            }
             {...getOverrideProps(overrides, "SubmitButton")}
           ></Button>
         </Flex>

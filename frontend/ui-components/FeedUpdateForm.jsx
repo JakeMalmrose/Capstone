@@ -2,17 +2,178 @@
 "use client";
 import * as React from "react";
 import {
+  Badge,
   Button,
+  Divider,
   Flex,
   Grid,
+  Icon,
+  ScrollView,
   SelectField,
+  Text,
   TextField,
+  useTheme,
 } from "@aws-amplify/ui-react";
 import { fetchByPath, getOverrideProps, validateField } from "./utils";
 import { generateClient } from "aws-amplify/api";
 import { getFeed } from "./graphql/queries";
 import { updateFeed } from "./graphql/mutations";
 const client = generateClient();
+function ArrayField({
+  items = [],
+  onChange,
+  label,
+  inputFieldRef,
+  children,
+  hasError,
+  setFieldValue,
+  currentFieldValue,
+  defaultFieldValue,
+  lengthLimit,
+  getBadgeText,
+  runValidationTasks,
+  errorMessage,
+}) {
+  const labelElement = <Text>{label}</Text>;
+  const {
+    tokens: {
+      components: {
+        fieldmessages: { error: errorStyles },
+      },
+    },
+  } = useTheme();
+  const [selectedBadgeIndex, setSelectedBadgeIndex] = React.useState();
+  const [isEditing, setIsEditing] = React.useState();
+  React.useEffect(() => {
+    if (isEditing) {
+      inputFieldRef?.current?.focus();
+    }
+  }, [isEditing]);
+  const removeItem = async (removeIndex) => {
+    const newItems = items.filter((value, index) => index !== removeIndex);
+    await onChange(newItems);
+    setSelectedBadgeIndex(undefined);
+  };
+  const addItem = async () => {
+    const { hasError } = runValidationTasks();
+    if (
+      currentFieldValue !== undefined &&
+      currentFieldValue !== null &&
+      currentFieldValue !== "" &&
+      !hasError
+    ) {
+      const newItems = [...items];
+      if (selectedBadgeIndex !== undefined) {
+        newItems[selectedBadgeIndex] = currentFieldValue;
+        setSelectedBadgeIndex(undefined);
+      } else {
+        newItems.push(currentFieldValue);
+      }
+      await onChange(newItems);
+      setIsEditing(false);
+    }
+  };
+  const arraySection = (
+    <React.Fragment>
+      {!!items?.length && (
+        <ScrollView height="inherit" width="inherit" maxHeight={"7rem"}>
+          {items.map((value, index) => {
+            return (
+              <Badge
+                key={index}
+                style={{
+                  cursor: "pointer",
+                  alignItems: "center",
+                  marginRight: 3,
+                  marginTop: 3,
+                  backgroundColor:
+                    index === selectedBadgeIndex ? "#B8CEF9" : "",
+                }}
+                onClick={() => {
+                  setSelectedBadgeIndex(index);
+                  setFieldValue(items[index]);
+                  setIsEditing(true);
+                }}
+              >
+                {getBadgeText ? getBadgeText(value) : value.toString()}
+                <Icon
+                  style={{
+                    cursor: "pointer",
+                    paddingLeft: 3,
+                    width: 20,
+                    height: 20,
+                  }}
+                  viewBox={{ width: 20, height: 20 }}
+                  paths={[
+                    {
+                      d: "M10 10l5.09-5.09L10 10l5.09 5.09L10 10zm0 0L4.91 4.91 10 10l-5.09 5.09L10 10z",
+                      stroke: "black",
+                    },
+                  ]}
+                  ariaLabel="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    removeItem(index);
+                  }}
+                />
+              </Badge>
+            );
+          })}
+        </ScrollView>
+      )}
+      <Divider orientation="horizontal" marginTop={5} />
+    </React.Fragment>
+  );
+  if (lengthLimit !== undefined && items.length >= lengthLimit && !isEditing) {
+    return (
+      <React.Fragment>
+        {labelElement}
+        {arraySection}
+      </React.Fragment>
+    );
+  }
+  return (
+    <React.Fragment>
+      {labelElement}
+      {isEditing && children}
+      {!isEditing ? (
+        <>
+          <Button
+            onClick={() => {
+              setIsEditing(true);
+            }}
+          >
+            Add item
+          </Button>
+          {errorMessage && hasError && (
+            <Text color={errorStyles.color} fontSize={errorStyles.fontSize}>
+              {errorMessage}
+            </Text>
+          )}
+        </>
+      ) : (
+        <Flex justifyContent="flex-end">
+          {(currentFieldValue || isEditing) && (
+            <Button
+              children="Cancel"
+              type="button"
+              size="small"
+              onClick={() => {
+                setFieldValue(defaultFieldValue);
+                setIsEditing(false);
+                setSelectedBadgeIndex(undefined);
+              }}
+            ></Button>
+          )}
+          <Button size="small" variation="link" onClick={addItem}>
+            {selectedBadgeIndex !== undefined ? "Save" : "Add"}
+          </Button>
+        </Flex>
+      )}
+      {arraySection}
+    </React.Fragment>
+  );
+}
 export default function FeedUpdateForm(props) {
   const {
     id: idProp,
@@ -26,29 +187,33 @@ export default function FeedUpdateForm(props) {
     ...rest
   } = props;
   const initialValues = {
+    feedId: "",
     name: "",
-    description: "",
     url: "",
+    description: "",
     type: "",
-    websiteId: "",
+    tags: [],
   };
+  const [feedId, setFeedId] = React.useState(initialValues.feedId);
   const [name, setName] = React.useState(initialValues.name);
+  const [url, setUrl] = React.useState(initialValues.url);
   const [description, setDescription] = React.useState(
     initialValues.description
   );
-  const [url, setUrl] = React.useState(initialValues.url);
   const [type, setType] = React.useState(initialValues.type);
-  const [websiteId, setWebsiteId] = React.useState(initialValues.websiteId);
+  const [tags, setTags] = React.useState(initialValues.tags);
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
     const cleanValues = feedRecord
       ? { ...initialValues, ...feedRecord }
       : initialValues;
+    setFeedId(cleanValues.feedId);
     setName(cleanValues.name);
-    setDescription(cleanValues.description);
     setUrl(cleanValues.url);
+    setDescription(cleanValues.description);
     setType(cleanValues.type);
-    setWebsiteId(cleanValues.websiteId);
+    setTags(cleanValues.tags ?? []);
+    setCurrentTagsValue("");
     setErrors({});
   };
   const [feedRecord, setFeedRecord] = React.useState(feedModelProp);
@@ -67,12 +232,15 @@ export default function FeedUpdateForm(props) {
     queryData();
   }, [idProp, feedModelProp]);
   React.useEffect(resetStateValues, [feedRecord]);
+  const [currentTagsValue, setCurrentTagsValue] = React.useState("");
+  const tagsRef = React.createRef();
   const validations = {
+    feedId: [{ type: "Required" }],
     name: [{ type: "Required" }],
-    description: [],
     url: [{ type: "Required" }],
+    description: [],
     type: [],
-    websiteId: [],
+    tags: [],
   };
   const runValidationTasks = async (
     fieldName,
@@ -100,11 +268,12 @@ export default function FeedUpdateForm(props) {
       onSubmit={async (event) => {
         event.preventDefault();
         let modelFields = {
+          feedId,
           name,
-          description: description ?? null,
           url,
+          description: description ?? null,
           type: type ?? null,
-          websiteId: websiteId ?? null,
+          tags: tags ?? null,
         };
         const validationResponses = await Promise.all(
           Object.keys(validations).reduce((promises, fieldName) => {
@@ -157,6 +326,35 @@ export default function FeedUpdateForm(props) {
       {...rest}
     >
       <TextField
+        label="Feed id"
+        isRequired={true}
+        isReadOnly={false}
+        value={feedId}
+        onChange={(e) => {
+          let { value } = e.target;
+          if (onChange) {
+            const modelFields = {
+              feedId: value,
+              name,
+              url,
+              description,
+              type,
+              tags,
+            };
+            const result = onChange(modelFields);
+            value = result?.feedId ?? value;
+          }
+          if (errors.feedId?.hasError) {
+            runValidationTasks("feedId", value);
+          }
+          setFeedId(value);
+        }}
+        onBlur={() => runValidationTasks("feedId", feedId)}
+        errorMessage={errors.feedId?.errorMessage}
+        hasError={errors.feedId?.hasError}
+        {...getOverrideProps(overrides, "feedId")}
+      ></TextField>
+      <TextField
         label="Name"
         isRequired={true}
         isReadOnly={false}
@@ -165,11 +363,12 @@ export default function FeedUpdateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
+              feedId,
               name: value,
-              description,
               url,
+              description,
               type,
-              websiteId,
+              tags,
             };
             const result = onChange(modelFields);
             value = result?.name ?? value;
@@ -185,34 +384,6 @@ export default function FeedUpdateForm(props) {
         {...getOverrideProps(overrides, "name")}
       ></TextField>
       <TextField
-        label="Description"
-        isRequired={false}
-        isReadOnly={false}
-        value={description}
-        onChange={(e) => {
-          let { value } = e.target;
-          if (onChange) {
-            const modelFields = {
-              name,
-              description: value,
-              url,
-              type,
-              websiteId,
-            };
-            const result = onChange(modelFields);
-            value = result?.description ?? value;
-          }
-          if (errors.description?.hasError) {
-            runValidationTasks("description", value);
-          }
-          setDescription(value);
-        }}
-        onBlur={() => runValidationTasks("description", description)}
-        errorMessage={errors.description?.errorMessage}
-        hasError={errors.description?.hasError}
-        {...getOverrideProps(overrides, "description")}
-      ></TextField>
-      <TextField
         label="Url"
         isRequired={true}
         isReadOnly={false}
@@ -221,11 +392,12 @@ export default function FeedUpdateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
+              feedId,
               name,
-              description,
               url: value,
+              description,
               type,
-              websiteId,
+              tags,
             };
             const result = onChange(modelFields);
             value = result?.url ?? value;
@@ -240,6 +412,35 @@ export default function FeedUpdateForm(props) {
         hasError={errors.url?.hasError}
         {...getOverrideProps(overrides, "url")}
       ></TextField>
+      <TextField
+        label="Description"
+        isRequired={false}
+        isReadOnly={false}
+        value={description}
+        onChange={(e) => {
+          let { value } = e.target;
+          if (onChange) {
+            const modelFields = {
+              feedId,
+              name,
+              url,
+              description: value,
+              type,
+              tags,
+            };
+            const result = onChange(modelFields);
+            value = result?.description ?? value;
+          }
+          if (errors.description?.hasError) {
+            runValidationTasks("description", value);
+          }
+          setDescription(value);
+        }}
+        onBlur={() => runValidationTasks("description", description)}
+        errorMessage={errors.description?.errorMessage}
+        hasError={errors.description?.hasError}
+        {...getOverrideProps(overrides, "description")}
+      ></TextField>
       <SelectField
         label="Type"
         placeholder="Please select an option"
@@ -249,11 +450,12 @@ export default function FeedUpdateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
+              feedId,
               name,
-              description,
               url,
+              description,
               type: value,
-              websiteId,
+              tags,
             };
             const result = onChange(modelFields);
             value = result?.type ?? value;
@@ -279,34 +481,56 @@ export default function FeedUpdateForm(props) {
           {...getOverrideProps(overrides, "typeoption1")}
         ></option>
       </SelectField>
-      <TextField
-        label="Website id"
-        isRequired={false}
-        isReadOnly={false}
-        value={websiteId}
-        onChange={(e) => {
-          let { value } = e.target;
+      <ArrayField
+        onChange={async (items) => {
+          let values = items;
           if (onChange) {
             const modelFields = {
+              feedId,
               name,
-              description,
               url,
+              description,
               type,
-              websiteId: value,
+              tags: values,
             };
             const result = onChange(modelFields);
-            value = result?.websiteId ?? value;
+            values = result?.tags ?? values;
           }
-          if (errors.websiteId?.hasError) {
-            runValidationTasks("websiteId", value);
-          }
-          setWebsiteId(value);
+          setTags(values);
+          setCurrentTagsValue("");
         }}
-        onBlur={() => runValidationTasks("websiteId", websiteId)}
-        errorMessage={errors.websiteId?.errorMessage}
-        hasError={errors.websiteId?.hasError}
-        {...getOverrideProps(overrides, "websiteId")}
-      ></TextField>
+        currentFieldValue={currentTagsValue}
+        label={"Tags"}
+        items={tags}
+        hasError={errors?.tags?.hasError}
+        runValidationTasks={async () =>
+          await runValidationTasks("tags", currentTagsValue)
+        }
+        errorMessage={errors?.tags?.errorMessage}
+        setFieldValue={setCurrentTagsValue}
+        inputFieldRef={tagsRef}
+        defaultFieldValue={""}
+      >
+        <TextField
+          label="Tags"
+          isRequired={false}
+          isReadOnly={false}
+          value={currentTagsValue}
+          onChange={(e) => {
+            let { value } = e.target;
+            if (errors.tags?.hasError) {
+              runValidationTasks("tags", value);
+            }
+            setCurrentTagsValue(value);
+          }}
+          onBlur={() => runValidationTasks("tags", currentTagsValue)}
+          errorMessage={errors.tags?.errorMessage}
+          hasError={errors.tags?.hasError}
+          ref={tagsRef}
+          labelHidden={true}
+          {...getOverrideProps(overrides, "tags")}
+        ></TextField>
+      </ArrayField>
       <Flex
         justifyContent="space-between"
         {...getOverrideProps(overrides, "CTAFlex")}

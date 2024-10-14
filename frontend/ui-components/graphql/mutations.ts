@@ -2,21 +2,100 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
+export const createArticle = /* GraphQL */ `
+  mutation CreateArticle(
+    $condition: ModelArticleConditionInput
+    $input: CreateArticleInput!
+  ) {
+    createArticle(condition: $condition, input: $input) {
+      articleId
+      createdAt
+      feed {
+        createdAt
+        description
+        feedId
+        id
+        name
+        owner
+        tags
+        type
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      feedId
+      fullText
+      id
+      owner
+      summaries {
+        nextToken
+        __typename
+      }
+      tags
+      title
+      updatedAt
+      url
+      __typename
+    }
+  }
+`;
 export const createFeed = /* GraphQL */ `
   mutation CreateFeed(
     $condition: ModelFeedConditionInput
     $input: CreateFeedInput!
   ) {
     createFeed(condition: $condition, input: $input) {
+      articles {
+        nextToken
+        __typename
+      }
+      createdAt
+      description
+      feedId
+      id
+      name
+      owner
+      tags
+      type
+      updatedAt
+      url
+      website {
+        category
+        createdAt
+        id
+        name
+        owner
+        tags
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      websiteId
+      __typename
+    }
+  }
+`;
+export const createSummarizer = /* GraphQL */ `
+  mutation CreateSummarizer(
+    $condition: ModelSummarizerConditionInput
+    $input: CreateSummarizerInput!
+  ) {
+    createSummarizer(condition: $condition, input: $input) {
       createdAt
       description
       id
       name
       owner
-      type
+      summaries {
+        nextToken
+        __typename
+      }
+      summarizerId
+      tags
+      tier
       updatedAt
-      url
-      websiteId
       __typename
     }
   }
@@ -27,47 +106,39 @@ export const createSummary = /* GraphQL */ `
     $input: CreateSummaryInput!
   ) {
     createSummary(condition: $condition, input: $input) {
-      articleUrl
+      article {
+        articleId
+        createdAt
+        feedId
+        fullText
+        id
+        owner
+        tags
+        title
+        updatedAt
+        url
+        __typename
+      }
+      articleId
       createdAt
-      fullText
       id
       owner
-      summary
+      summarizer {
+        createdAt
+        description
+        id
+        name
+        owner
+        summarizerId
+        tags
+        tier
+        updatedAt
+        __typename
+      }
+      summarizerId
+      summaryId
       tags
-      title
-      updatedAt
-      userId
-      __typename
-    }
-  }
-`;
-export const createTodo = /* GraphQL */ `
-  mutation CreateTodo(
-    $condition: ModelTodoConditionInput
-    $input: CreateTodoInput!
-  ) {
-    createTodo(condition: $condition, input: $input) {
-      content
-      createdAt
-      id
-      owner
-      updatedAt
-      __typename
-    }
-  }
-`;
-export const createUser = /* GraphQL */ `
-  mutation CreateUser(
-    $condition: ModelUserConditionInput
-    $input: CreateUserInput!
-  ) {
-    createUser(condition: $condition, input: $input) {
-      createdAt
-      email
-      favoriteFeeds
-      id
-      isAdmin
-      owner
+      text
       updatedAt
       __typename
     }
@@ -81,10 +152,53 @@ export const createWebsite = /* GraphQL */ `
     createWebsite(condition: $condition, input: $input) {
       category
       createdAt
+      feeds {
+        nextToken
+        __typename
+      }
       id
       name
       owner
       tags
+      updatedAt
+      url
+      websiteId
+      __typename
+    }
+  }
+`;
+export const deleteArticle = /* GraphQL */ `
+  mutation DeleteArticle(
+    $condition: ModelArticleConditionInput
+    $input: DeleteArticleInput!
+  ) {
+    deleteArticle(condition: $condition, input: $input) {
+      articleId
+      createdAt
+      feed {
+        createdAt
+        description
+        feedId
+        id
+        name
+        owner
+        tags
+        type
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      feedId
+      fullText
+      id
+      owner
+      summaries {
+        nextToken
+        __typename
+      }
+      tags
+      title
       updatedAt
       url
       __typename
@@ -97,15 +211,56 @@ export const deleteFeed = /* GraphQL */ `
     $input: DeleteFeedInput!
   ) {
     deleteFeed(condition: $condition, input: $input) {
+      articles {
+        nextToken
+        __typename
+      }
+      createdAt
+      description
+      feedId
+      id
+      name
+      owner
+      tags
+      type
+      updatedAt
+      url
+      website {
+        category
+        createdAt
+        id
+        name
+        owner
+        tags
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      websiteId
+      __typename
+    }
+  }
+`;
+export const deleteSummarizer = /* GraphQL */ `
+  mutation DeleteSummarizer(
+    $condition: ModelSummarizerConditionInput
+    $input: DeleteSummarizerInput!
+  ) {
+    deleteSummarizer(condition: $condition, input: $input) {
       createdAt
       description
       id
       name
       owner
-      type
+      summaries {
+        nextToken
+        __typename
+      }
+      summarizerId
+      tags
+      tier
       updatedAt
-      url
-      websiteId
       __typename
     }
   }
@@ -116,47 +271,39 @@ export const deleteSummary = /* GraphQL */ `
     $input: DeleteSummaryInput!
   ) {
     deleteSummary(condition: $condition, input: $input) {
-      articleUrl
+      article {
+        articleId
+        createdAt
+        feedId
+        fullText
+        id
+        owner
+        tags
+        title
+        updatedAt
+        url
+        __typename
+      }
+      articleId
       createdAt
-      fullText
       id
       owner
-      summary
+      summarizer {
+        createdAt
+        description
+        id
+        name
+        owner
+        summarizerId
+        tags
+        tier
+        updatedAt
+        __typename
+      }
+      summarizerId
+      summaryId
       tags
-      title
-      updatedAt
-      userId
-      __typename
-    }
-  }
-`;
-export const deleteTodo = /* GraphQL */ `
-  mutation DeleteTodo(
-    $condition: ModelTodoConditionInput
-    $input: DeleteTodoInput!
-  ) {
-    deleteTodo(condition: $condition, input: $input) {
-      content
-      createdAt
-      id
-      owner
-      updatedAt
-      __typename
-    }
-  }
-`;
-export const deleteUser = /* GraphQL */ `
-  mutation DeleteUser(
-    $condition: ModelUserConditionInput
-    $input: DeleteUserInput!
-  ) {
-    deleteUser(condition: $condition, input: $input) {
-      createdAt
-      email
-      favoriteFeeds
-      id
-      isAdmin
-      owner
+      text
       updatedAt
       __typename
     }
@@ -170,10 +317,53 @@ export const deleteWebsite = /* GraphQL */ `
     deleteWebsite(condition: $condition, input: $input) {
       category
       createdAt
+      feeds {
+        nextToken
+        __typename
+      }
       id
       name
       owner
       tags
+      updatedAt
+      url
+      websiteId
+      __typename
+    }
+  }
+`;
+export const updateArticle = /* GraphQL */ `
+  mutation UpdateArticle(
+    $condition: ModelArticleConditionInput
+    $input: UpdateArticleInput!
+  ) {
+    updateArticle(condition: $condition, input: $input) {
+      articleId
+      createdAt
+      feed {
+        createdAt
+        description
+        feedId
+        id
+        name
+        owner
+        tags
+        type
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      feedId
+      fullText
+      id
+      owner
+      summaries {
+        nextToken
+        __typename
+      }
+      tags
+      title
       updatedAt
       url
       __typename
@@ -186,15 +376,56 @@ export const updateFeed = /* GraphQL */ `
     $input: UpdateFeedInput!
   ) {
     updateFeed(condition: $condition, input: $input) {
+      articles {
+        nextToken
+        __typename
+      }
+      createdAt
+      description
+      feedId
+      id
+      name
+      owner
+      tags
+      type
+      updatedAt
+      url
+      website {
+        category
+        createdAt
+        id
+        name
+        owner
+        tags
+        updatedAt
+        url
+        websiteId
+        __typename
+      }
+      websiteId
+      __typename
+    }
+  }
+`;
+export const updateSummarizer = /* GraphQL */ `
+  mutation UpdateSummarizer(
+    $condition: ModelSummarizerConditionInput
+    $input: UpdateSummarizerInput!
+  ) {
+    updateSummarizer(condition: $condition, input: $input) {
       createdAt
       description
       id
       name
       owner
-      type
+      summaries {
+        nextToken
+        __typename
+      }
+      summarizerId
+      tags
+      tier
       updatedAt
-      url
-      websiteId
       __typename
     }
   }
@@ -205,47 +436,39 @@ export const updateSummary = /* GraphQL */ `
     $input: UpdateSummaryInput!
   ) {
     updateSummary(condition: $condition, input: $input) {
-      articleUrl
+      article {
+        articleId
+        createdAt
+        feedId
+        fullText
+        id
+        owner
+        tags
+        title
+        updatedAt
+        url
+        __typename
+      }
+      articleId
       createdAt
-      fullText
       id
       owner
-      summary
+      summarizer {
+        createdAt
+        description
+        id
+        name
+        owner
+        summarizerId
+        tags
+        tier
+        updatedAt
+        __typename
+      }
+      summarizerId
+      summaryId
       tags
-      title
-      updatedAt
-      userId
-      __typename
-    }
-  }
-`;
-export const updateTodo = /* GraphQL */ `
-  mutation UpdateTodo(
-    $condition: ModelTodoConditionInput
-    $input: UpdateTodoInput!
-  ) {
-    updateTodo(condition: $condition, input: $input) {
-      content
-      createdAt
-      id
-      owner
-      updatedAt
-      __typename
-    }
-  }
-`;
-export const updateUser = /* GraphQL */ `
-  mutation UpdateUser(
-    $condition: ModelUserConditionInput
-    $input: UpdateUserInput!
-  ) {
-    updateUser(condition: $condition, input: $input) {
-      createdAt
-      email
-      favoriteFeeds
-      id
-      isAdmin
-      owner
+      text
       updatedAt
       __typename
     }
@@ -259,12 +482,17 @@ export const updateWebsite = /* GraphQL */ `
     updateWebsite(condition: $condition, input: $input) {
       category
       createdAt
+      feeds {
+        nextToken
+        __typename
+      }
       id
       name
       owner
       tags
       updatedAt
       url
+      websiteId
       __typename
     }
   }

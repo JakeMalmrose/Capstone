@@ -69,7 +69,6 @@ export const createFeed = /* GraphQL */ `
         tags
         updatedAt
         url
-        websiteId
         __typename
       }
       websiteId
@@ -162,7 +161,6 @@ export const createWebsite = /* GraphQL */ `
       tags
       updatedAt
       url
-      websiteId
       __typename
     }
   }
@@ -234,7 +232,6 @@ export const deleteFeed = /* GraphQL */ `
         tags
         updatedAt
         url
-        websiteId
         __typename
       }
       websiteId
@@ -327,7 +324,6 @@ export const deleteWebsite = /* GraphQL */ `
       tags
       updatedAt
       url
-      websiteId
       __typename
     }
   }
@@ -399,7 +395,6 @@ export const updateFeed = /* GraphQL */ `
         tags
         updatedAt
         url
-        websiteId
         __typename
       }
       websiteId
@@ -492,7 +487,6 @@ export const updateWebsite = /* GraphQL */ `
       tags
       updatedAt
       url
-      websiteId
       __typename
     }
   }

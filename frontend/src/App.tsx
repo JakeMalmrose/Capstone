@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { Authenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import { Link, Route, Routes } from 'react-router-dom';
-import Websites from './components/Websites';
+import AdminWebsites from './components/AdminWebsites.tsx';
 import WebsiteArticles from './components/WebsiteArticles';
 import WebsiteList from './components/WebsiteList';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import Home from './components/Home';
 import Summarizer from './components/Summarizer.tsx';
 import Extractor from './components/Extractor';
+import AdminEditFeeds from './components/AdminEditFeeds.tsx'
 
 function App() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -61,7 +62,10 @@ function App() {
               <Route path="/summaries"/>
               <Route path="/website/:websiteId" element={<WebsiteArticles />} />
               {!isAdmin && (
-                <Route path="/admin/websites" element={<Websites />} />
+                <Route path="/admin/websites" element={<AdminWebsites />} />
+              )}
+              {true && (
+                <Route path="/admin/editFeeds/:websiteId" element={<AdminEditFeeds />} />
               )}
             </Routes>
           </main>

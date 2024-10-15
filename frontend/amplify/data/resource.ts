@@ -2,6 +2,7 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { sayHello } from "../functions/say-hello/resource";
 import { summarize } from "../functions/summarize/resource";
 import { extractUrls } from "../functions/extract-urls/resource";
+import { rssParser } from "../functions/rss-parser/resource";
 
 const schema = a.schema({
   //functions
@@ -29,11 +30,24 @@ const schema = a.schema({
     .returns(a.string().array())
     .authorization(allow => [allow.authenticated()])
     .handler(a.handler.function(extractUrls)),
+  processRssFeed: a
+    .mutation()
+    .arguments({
+      feedUrl: a.string(),
+      websiteId: a.string()
+    })
+    .returns(
+      a.customType({
+        success: a.boolean(),
+        message: a.string()
+      })
+    )
+    .authorization(allow => [allow.authenticated()])
+    .handler(a.handler.function(rssParser)),
 
   //data models
   Website: a
   .model({
-    websiteId: a.id().required(),
     name: a.string().required(),
     url: a.string().required(),
     category: a.string(),
@@ -50,7 +64,7 @@ const schema = a.schema({
       description: a.string(),
       type: a.enum(['RSS', 'OTHER']),
       tags: a.string().array(),
-      websiteId: a.id(),
+      websiteId: a.id().required(),
       website: a.belongsTo("Website", "websiteId"),
       articles: a.hasMany("Article", "feedId"),
     })

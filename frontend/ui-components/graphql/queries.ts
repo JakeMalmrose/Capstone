@@ -68,7 +68,6 @@ export const getFeed = /* GraphQL */ `
         tags
         updatedAt
         url
-        websiteId
         __typename
       }
       websiteId
@@ -152,7 +151,6 @@ export const getWebsite = /* GraphQL */ `
       tags
       updatedAt
       url
-      websiteId
       __typename
     }
   }
@@ -272,7 +270,6 @@ export const listWebsites = /* GraphQL */ `
         tags
         updatedAt
         url
-        websiteId
         __typename
       }
       nextToken

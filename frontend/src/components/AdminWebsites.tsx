@@ -3,6 +3,8 @@ import { generateClient } from 'aws-amplify/data';
 import { Alert } from '@aws-amplify/ui-react';
 import type { Schema } from '../../amplify/data/resource';
 import WebsiteCreateForm, { WebsiteCreateFormInputValues } from '../../ui-components/WebsiteCreateForm';
+import { Button } from '@aws-amplify/ui-react';
+import { Link } from 'react-router-dom';
 
 const client = generateClient<Schema>();
 
@@ -65,10 +67,16 @@ function Websites() {
         />
       )}
       <ul>
-        {websites.map((website) => (
+      {websites.map((website) => (
           <li key={website.id}>
-            {website.name} - {website.url}
+            {website.name} - {website.url} - {website.id}
             <button onClick={() => deleteWebsite(website.id)}>Delete</button>
+            <Button
+              as={Link}
+              to={`/admin/editFeeds/${website.id}`}
+              variation="primary"
+              marginTop="1rem"
+            >Edit feeds</Button>
           </li>
         ))}
       </ul>

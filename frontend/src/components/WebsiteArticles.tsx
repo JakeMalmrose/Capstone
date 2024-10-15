@@ -59,7 +59,7 @@ function WebsiteArticles() {
 
         // Fetch summaries (articles) for this website
         const summariesResponse = await client.models.Summary.list({
-          filter: { websiteId: { eq: websiteId } }
+          filter: { id: { eq: websiteId } }
         });
         setArticles(summariesResponse.data);
       } catch (err) {
@@ -99,8 +99,8 @@ function WebsiteArticles() {
       >
         {(article) => (
           <Card key={article.id}>
-            <Heading level={4}>{article.title}</Heading>
-            <Text>{article.summary.substring(0, 100)}...</Text>
+            {/* <Heading level={4}>{article.title}</Heading> */}
+            {/* <Text>{article.summary.substring(0, 100)}...</Text> */}
             <Link to={`/summary/${article.id}`}>Read more</Link>
           </Card>
         )}

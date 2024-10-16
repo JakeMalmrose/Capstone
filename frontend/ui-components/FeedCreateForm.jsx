@@ -185,14 +185,12 @@ export default function FeedCreateForm(props) {
     ...rest
   } = props;
   const initialValues = {
-    feedId: "",
     name: "",
     url: "",
     description: "",
     type: "",
     tags: [],
   };
-  const [feedId, setFeedId] = React.useState(initialValues.feedId);
   const [name, setName] = React.useState(initialValues.name);
   const [url, setUrl] = React.useState(initialValues.url);
   const [description, setDescription] = React.useState(
@@ -202,7 +200,6 @@ export default function FeedCreateForm(props) {
   const [tags, setTags] = React.useState(initialValues.tags);
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
-    setFeedId(initialValues.feedId);
     setName(initialValues.name);
     setUrl(initialValues.url);
     setDescription(initialValues.description);
@@ -214,7 +211,6 @@ export default function FeedCreateForm(props) {
   const [currentTagsValue, setCurrentTagsValue] = React.useState("");
   const tagsRef = React.createRef();
   const validations = {
-    feedId: [{ type: "Required" }],
     name: [{ type: "Required" }],
     url: [{ type: "Required" }],
     description: [],
@@ -247,7 +243,6 @@ export default function FeedCreateForm(props) {
       onSubmit={async (event) => {
         event.preventDefault();
         let modelFields = {
-          feedId,
           name,
           url,
           description,
@@ -307,35 +302,6 @@ export default function FeedCreateForm(props) {
       {...rest}
     >
       <TextField
-        label="Feed id"
-        isRequired={true}
-        isReadOnly={false}
-        value={feedId}
-        onChange={(e) => {
-          let { value } = e.target;
-          if (onChange) {
-            const modelFields = {
-              feedId: value,
-              name,
-              url,
-              description,
-              type,
-              tags,
-            };
-            const result = onChange(modelFields);
-            value = result?.feedId ?? value;
-          }
-          if (errors.feedId?.hasError) {
-            runValidationTasks("feedId", value);
-          }
-          setFeedId(value);
-        }}
-        onBlur={() => runValidationTasks("feedId", feedId)}
-        errorMessage={errors.feedId?.errorMessage}
-        hasError={errors.feedId?.hasError}
-        {...getOverrideProps(overrides, "feedId")}
-      ></TextField>
-      <TextField
         label="Name"
         isRequired={true}
         isReadOnly={false}
@@ -344,7 +310,6 @@ export default function FeedCreateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              feedId,
               name: value,
               url,
               description,
@@ -373,7 +338,6 @@ export default function FeedCreateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              feedId,
               name,
               url: value,
               description,
@@ -402,7 +366,6 @@ export default function FeedCreateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              feedId,
               name,
               url,
               description: value,
@@ -431,7 +394,6 @@ export default function FeedCreateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              feedId,
               name,
               url,
               description,
@@ -467,7 +429,6 @@ export default function FeedCreateForm(props) {
           let values = items;
           if (onChange) {
             const modelFields = {
-              feedId,
               name,
               url,
               description,

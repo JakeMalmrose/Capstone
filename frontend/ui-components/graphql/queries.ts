@@ -10,12 +10,10 @@ export const extractUrls = /* GraphQL */ `
 export const getArticle = /* GraphQL */ `
   query GetArticle($id: ID!) {
     getArticle(id: $id) {
-      articleId
       createdAt
       feed {
         createdAt
         description
-        feedId
         id
         name
         owner
@@ -51,7 +49,6 @@ export const getFeed = /* GraphQL */ `
       }
       createdAt
       description
-      feedId
       id
       name
       owner
@@ -99,7 +96,6 @@ export const getSummary = /* GraphQL */ `
   query GetSummary($id: ID!) {
     getSummary(id: $id) {
       article {
-        articleId
         createdAt
         feedId
         fullText
@@ -128,7 +124,6 @@ export const getSummary = /* GraphQL */ `
         __typename
       }
       summarizerId
-      summaryId
       tags
       text
       updatedAt
@@ -163,7 +158,6 @@ export const listArticles = /* GraphQL */ `
   ) {
     listArticles(filter: $filter, limit: $limit, nextToken: $nextToken) {
       items {
-        articleId
         createdAt
         feedId
         fullText
@@ -190,7 +184,6 @@ export const listFeeds = /* GraphQL */ `
       items {
         createdAt
         description
-        feedId
         id
         name
         owner
@@ -219,7 +212,6 @@ export const listSummaries = /* GraphQL */ `
         id
         owner
         summarizerId
-        summaryId
         tags
         text
         updatedAt

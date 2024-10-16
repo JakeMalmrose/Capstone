@@ -186,14 +186,12 @@ export default function ArticleUpdateForm(props) {
     ...rest
   } = props;
   const initialValues = {
-    articleId: "",
     url: "",
     title: "",
     fullText: "",
     tags: [],
     createdAt: "",
   };
-  const [articleId, setArticleId] = React.useState(initialValues.articleId);
   const [url, setUrl] = React.useState(initialValues.url);
   const [title, setTitle] = React.useState(initialValues.title);
   const [fullText, setFullText] = React.useState(initialValues.fullText);
@@ -204,7 +202,6 @@ export default function ArticleUpdateForm(props) {
     const cleanValues = articleRecord
       ? { ...initialValues, ...articleRecord }
       : initialValues;
-    setArticleId(cleanValues.articleId);
     setUrl(cleanValues.url);
     setTitle(cleanValues.title);
     setFullText(cleanValues.fullText);
@@ -232,7 +229,6 @@ export default function ArticleUpdateForm(props) {
   const [currentTagsValue, setCurrentTagsValue] = React.useState("");
   const tagsRef = React.createRef();
   const validations = {
-    articleId: [{ type: "Required" }],
     url: [{ type: "Required" }],
     title: [{ type: "Required" }],
     fullText: [{ type: "Required" }],
@@ -282,7 +278,6 @@ export default function ArticleUpdateForm(props) {
       onSubmit={async (event) => {
         event.preventDefault();
         let modelFields = {
-          articleId,
           url,
           title,
           fullText,
@@ -340,35 +335,6 @@ export default function ArticleUpdateForm(props) {
       {...rest}
     >
       <TextField
-        label="Article id"
-        isRequired={true}
-        isReadOnly={false}
-        value={articleId}
-        onChange={(e) => {
-          let { value } = e.target;
-          if (onChange) {
-            const modelFields = {
-              articleId: value,
-              url,
-              title,
-              fullText,
-              tags,
-              createdAt,
-            };
-            const result = onChange(modelFields);
-            value = result?.articleId ?? value;
-          }
-          if (errors.articleId?.hasError) {
-            runValidationTasks("articleId", value);
-          }
-          setArticleId(value);
-        }}
-        onBlur={() => runValidationTasks("articleId", articleId)}
-        errorMessage={errors.articleId?.errorMessage}
-        hasError={errors.articleId?.hasError}
-        {...getOverrideProps(overrides, "articleId")}
-      ></TextField>
-      <TextField
         label="Url"
         isRequired={true}
         isReadOnly={false}
@@ -377,7 +343,6 @@ export default function ArticleUpdateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              articleId,
               url: value,
               title,
               fullText,
@@ -406,7 +371,6 @@ export default function ArticleUpdateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              articleId,
               url,
               title: value,
               fullText,
@@ -435,7 +399,6 @@ export default function ArticleUpdateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              articleId,
               url,
               title,
               fullText: value,
@@ -460,7 +423,6 @@ export default function ArticleUpdateForm(props) {
           let values = items;
           if (onChange) {
             const modelFields = {
-              articleId,
               url,
               title,
               fullText,
@@ -516,7 +478,6 @@ export default function ArticleUpdateForm(props) {
             e.target.value === "" ? "" : new Date(e.target.value).toISOString();
           if (onChange) {
             const modelFields = {
-              articleId,
               url,
               title,
               fullText,

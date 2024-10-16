@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import { Alert } from '@aws-amplify/ui-react';
 import type { Schema } from '../../amplify/data/resource';
-import FeedCreateForm, { FeedCreateFormInputValues } from '../../ui-components/FeedCreateForm';
+import { FeedCreateFormInputValues } from '../../ui-components/FeedCreateForm';
+import { ExtendedFeedCreateForm } from './extended-forms/ExtendedFeedCreateForm';
 import { Button } from '@aws-amplify/ui-react';
 import { Link, useParams } from 'react-router-dom';
 
@@ -51,6 +52,9 @@ function AdminEditFeeds() {
         fetchFeeds();
     }, [fetchWebsite, fetchFeeds]);
 
+    if (!websiteId) {
+        return <div>Invalid website ID</div>;
+    }
     return (
         <div>
             <h1>Editing Feeds for website: {website ? website.name : 'Loading...'}</h1>
@@ -59,8 +63,8 @@ function AdminEditFeeds() {
                 {showForm ? 'Cancel' : '+ Add Website'}
             </button>
             {showForm && (
-                <FeedCreateForm
-                    // websiteId={websiteId}
+                <ExtendedFeedCreateForm
+                    websiteId={websiteId}
                     onSuccess={() => {
                         setShowForm(false);
                         fetchFeeds();

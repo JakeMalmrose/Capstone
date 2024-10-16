@@ -8,12 +8,10 @@ export const onCreateArticle = /* GraphQL */ `
     $owner: String
   ) {
     onCreateArticle(filter: $filter, owner: $owner) {
-      articleId
       createdAt
       feed {
         createdAt
         description
-        feedId
         id
         name
         owner
@@ -52,7 +50,6 @@ export const onCreateFeed = /* GraphQL */ `
       }
       createdAt
       description
-      feedId
       id
       name
       owner
@@ -106,7 +103,6 @@ export const onCreateSummary = /* GraphQL */ `
   ) {
     onCreateSummary(filter: $filter, owner: $owner) {
       article {
-        articleId
         createdAt
         feedId
         fullText
@@ -135,7 +131,6 @@ export const onCreateSummary = /* GraphQL */ `
         __typename
       }
       summarizerId
-      summaryId
       tags
       text
       updatedAt
@@ -171,12 +166,10 @@ export const onDeleteArticle = /* GraphQL */ `
     $owner: String
   ) {
     onDeleteArticle(filter: $filter, owner: $owner) {
-      articleId
       createdAt
       feed {
         createdAt
         description
-        feedId
         id
         name
         owner
@@ -215,7 +208,6 @@ export const onDeleteFeed = /* GraphQL */ `
       }
       createdAt
       description
-      feedId
       id
       name
       owner
@@ -269,7 +261,6 @@ export const onDeleteSummary = /* GraphQL */ `
   ) {
     onDeleteSummary(filter: $filter, owner: $owner) {
       article {
-        articleId
         createdAt
         feedId
         fullText
@@ -298,7 +289,6 @@ export const onDeleteSummary = /* GraphQL */ `
         __typename
       }
       summarizerId
-      summaryId
       tags
       text
       updatedAt
@@ -334,12 +324,10 @@ export const onUpdateArticle = /* GraphQL */ `
     $owner: String
   ) {
     onUpdateArticle(filter: $filter, owner: $owner) {
-      articleId
       createdAt
       feed {
         createdAt
         description
-        feedId
         id
         name
         owner
@@ -378,7 +366,6 @@ export const onUpdateFeed = /* GraphQL */ `
       }
       createdAt
       description
-      feedId
       id
       name
       owner
@@ -432,7 +419,6 @@ export const onUpdateSummary = /* GraphQL */ `
   ) {
     onUpdateSummary(filter: $filter, owner: $owner) {
       article {
-        articleId
         createdAt
         feedId
         fullText
@@ -461,7 +447,6 @@ export const onUpdateSummary = /* GraphQL */ `
         __typename
       }
       summarizerId
-      summaryId
       tags
       text
       updatedAt

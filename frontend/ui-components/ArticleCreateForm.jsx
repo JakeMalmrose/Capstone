@@ -184,14 +184,12 @@ export default function ArticleCreateForm(props) {
     ...rest
   } = props;
   const initialValues = {
-    articleId: "",
     url: "",
     title: "",
     fullText: "",
     tags: [],
     createdAt: "",
   };
-  const [articleId, setArticleId] = React.useState(initialValues.articleId);
   const [url, setUrl] = React.useState(initialValues.url);
   const [title, setTitle] = React.useState(initialValues.title);
   const [fullText, setFullText] = React.useState(initialValues.fullText);
@@ -199,7 +197,6 @@ export default function ArticleCreateForm(props) {
   const [createdAt, setCreatedAt] = React.useState(initialValues.createdAt);
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
-    setArticleId(initialValues.articleId);
     setUrl(initialValues.url);
     setTitle(initialValues.title);
     setFullText(initialValues.fullText);
@@ -211,7 +208,6 @@ export default function ArticleCreateForm(props) {
   const [currentTagsValue, setCurrentTagsValue] = React.useState("");
   const tagsRef = React.createRef();
   const validations = {
-    articleId: [{ type: "Required" }],
     url: [{ type: "Required" }],
     title: [{ type: "Required" }],
     fullText: [{ type: "Required" }],
@@ -261,7 +257,6 @@ export default function ArticleCreateForm(props) {
       onSubmit={async (event) => {
         event.preventDefault();
         let modelFields = {
-          articleId,
           url,
           title,
           fullText,
@@ -321,35 +316,6 @@ export default function ArticleCreateForm(props) {
       {...rest}
     >
       <TextField
-        label="Article id"
-        isRequired={true}
-        isReadOnly={false}
-        value={articleId}
-        onChange={(e) => {
-          let { value } = e.target;
-          if (onChange) {
-            const modelFields = {
-              articleId: value,
-              url,
-              title,
-              fullText,
-              tags,
-              createdAt,
-            };
-            const result = onChange(modelFields);
-            value = result?.articleId ?? value;
-          }
-          if (errors.articleId?.hasError) {
-            runValidationTasks("articleId", value);
-          }
-          setArticleId(value);
-        }}
-        onBlur={() => runValidationTasks("articleId", articleId)}
-        errorMessage={errors.articleId?.errorMessage}
-        hasError={errors.articleId?.hasError}
-        {...getOverrideProps(overrides, "articleId")}
-      ></TextField>
-      <TextField
         label="Url"
         isRequired={true}
         isReadOnly={false}
@@ -358,7 +324,6 @@ export default function ArticleCreateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              articleId,
               url: value,
               title,
               fullText,
@@ -387,7 +352,6 @@ export default function ArticleCreateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              articleId,
               url,
               title: value,
               fullText,
@@ -416,7 +380,6 @@ export default function ArticleCreateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
-              articleId,
               url,
               title,
               fullText: value,
@@ -441,7 +404,6 @@ export default function ArticleCreateForm(props) {
           let values = items;
           if (onChange) {
             const modelFields = {
-              articleId,
               url,
               title,
               fullText,
@@ -497,7 +459,6 @@ export default function ArticleCreateForm(props) {
             e.target.value === "" ? "" : new Date(e.target.value).toISOString();
           if (onChange) {
             const modelFields = {
-              articleId,
               url,
               title,
               fullText,

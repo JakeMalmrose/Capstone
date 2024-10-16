@@ -17,7 +17,6 @@ export declare type ValidationResponse = {
 };
 export declare type ValidationFunction<T> = (value: T, validationResponse: ValidationResponse) => ValidationResponse | Promise<ValidationResponse>;
 export declare type FeedUpdateFormInputValues = {
-    feedId?: string;
     name?: string;
     url?: string;
     description?: string;
@@ -25,7 +24,6 @@ export declare type FeedUpdateFormInputValues = {
     tags?: string[];
 };
 export declare type FeedUpdateFormValidationValues = {
-    feedId?: ValidationFunction<string>;
     name?: ValidationFunction<string>;
     url?: ValidationFunction<string>;
     description?: ValidationFunction<string>;
@@ -35,7 +33,6 @@ export declare type FeedUpdateFormValidationValues = {
 export declare type PrimitiveOverrideProps<T> = Partial<T> & React.DOMAttributes<HTMLDivElement>;
 export declare type FeedUpdateFormOverridesProps = {
     FeedUpdateFormGrid?: PrimitiveOverrideProps<GridProps>;
-    feedId?: PrimitiveOverrideProps<TextFieldProps>;
     name?: PrimitiveOverrideProps<TextFieldProps>;
     url?: PrimitiveOverrideProps<TextFieldProps>;
     description?: PrimitiveOverrideProps<TextFieldProps>;

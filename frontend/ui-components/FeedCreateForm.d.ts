@@ -16,7 +16,6 @@ export declare type ValidationResponse = {
 };
 export declare type ValidationFunction<T> = (value: T, validationResponse: ValidationResponse) => ValidationResponse | Promise<ValidationResponse>;
 export declare type FeedCreateFormInputValues = {
-    feedId?: string;
     name?: string;
     url?: string;
     description?: string;
@@ -24,7 +23,6 @@ export declare type FeedCreateFormInputValues = {
     tags?: string[];
 };
 export declare type FeedCreateFormValidationValues = {
-    feedId?: ValidationFunction<string>;
     name?: ValidationFunction<string>;
     url?: ValidationFunction<string>;
     description?: ValidationFunction<string>;
@@ -34,7 +32,6 @@ export declare type FeedCreateFormValidationValues = {
 export declare type PrimitiveOverrideProps<T> = Partial<T> & React.DOMAttributes<HTMLDivElement>;
 export declare type FeedCreateFormOverridesProps = {
     FeedCreateFormGrid?: PrimitiveOverrideProps<GridProps>;
-    feedId?: PrimitiveOverrideProps<TextFieldProps>;
     name?: PrimitiveOverrideProps<TextFieldProps>;
     url?: PrimitiveOverrideProps<TextFieldProps>;
     description?: PrimitiveOverrideProps<TextFieldProps>;
@@ -52,3 +49,10 @@ export declare type FeedCreateFormProps = React.PropsWithChildren<{
     onValidate?: FeedCreateFormValidationValues;
 } & React.CSSProperties>;
 export default function FeedCreateForm(props: FeedCreateFormProps): React.ReactElement;
+
+
+//NEW
+export type ExtendedFeedCreateFormProps = Omit<FeedCreateFormProps, 'onSubmit'> & {
+    websiteId: string;
+    onSubmit?: (fields: FeedCreateFormInputValues & { websiteId: string }) => FeedCreateFormInputValues & { websiteId: string };
+  };

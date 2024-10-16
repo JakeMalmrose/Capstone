@@ -53,7 +53,7 @@ function WebsiteList() {
               variation="primary"
               marginTop="1rem"
             >
-              View Articles
+              View Feeds
             </Button>
           </Card>
         )}

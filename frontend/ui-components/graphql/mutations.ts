@@ -8,12 +8,10 @@ export const createArticle = /* GraphQL */ `
     $input: CreateArticleInput!
   ) {
     createArticle(condition: $condition, input: $input) {
-      articleId
       createdAt
       feed {
         createdAt
         description
-        feedId
         id
         name
         owner
@@ -52,7 +50,6 @@ export const createFeed = /* GraphQL */ `
       }
       createdAt
       description
-      feedId
       id
       name
       owner
@@ -106,7 +103,6 @@ export const createSummary = /* GraphQL */ `
   ) {
     createSummary(condition: $condition, input: $input) {
       article {
-        articleId
         createdAt
         feedId
         fullText
@@ -135,7 +131,6 @@ export const createSummary = /* GraphQL */ `
         __typename
       }
       summarizerId
-      summaryId
       tags
       text
       updatedAt
@@ -171,12 +166,10 @@ export const deleteArticle = /* GraphQL */ `
     $input: DeleteArticleInput!
   ) {
     deleteArticle(condition: $condition, input: $input) {
-      articleId
       createdAt
       feed {
         createdAt
         description
-        feedId
         id
         name
         owner
@@ -215,7 +208,6 @@ export const deleteFeed = /* GraphQL */ `
       }
       createdAt
       description
-      feedId
       id
       name
       owner
@@ -269,7 +261,6 @@ export const deleteSummary = /* GraphQL */ `
   ) {
     deleteSummary(condition: $condition, input: $input) {
       article {
-        articleId
         createdAt
         feedId
         fullText
@@ -298,7 +289,6 @@ export const deleteSummary = /* GraphQL */ `
         __typename
       }
       summarizerId
-      summaryId
       tags
       text
       updatedAt
@@ -328,18 +318,25 @@ export const deleteWebsite = /* GraphQL */ `
     }
   }
 `;
+export const processRssFeed = /* GraphQL */ `
+  mutation ProcessRssFeed($feedUrl: String, $websiteId: String) {
+    processRssFeed(feedUrl: $feedUrl, websiteId: $websiteId) {
+      message
+      success
+      __typename
+    }
+  }
+`;
 export const updateArticle = /* GraphQL */ `
   mutation UpdateArticle(
     $condition: ModelArticleConditionInput
     $input: UpdateArticleInput!
   ) {
     updateArticle(condition: $condition, input: $input) {
-      articleId
       createdAt
       feed {
         createdAt
         description
-        feedId
         id
         name
         owner
@@ -378,7 +375,6 @@ export const updateFeed = /* GraphQL */ `
       }
       createdAt
       description
-      feedId
       id
       name
       owner
@@ -432,7 +428,6 @@ export const updateSummary = /* GraphQL */ `
   ) {
     updateSummary(condition: $condition, input: $input) {
       article {
-        articleId
         createdAt
         feedId
         fullText
@@ -461,7 +456,6 @@ export const updateSummary = /* GraphQL */ `
         __typename
       }
       summarizerId
-      summaryId
       tags
       text
       updatedAt

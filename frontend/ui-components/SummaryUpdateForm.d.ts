@@ -17,13 +17,11 @@ export declare type ValidationResponse = {
 };
 export declare type ValidationFunction<T> = (value: T, validationResponse: ValidationResponse) => ValidationResponse | Promise<ValidationResponse>;
 export declare type SummaryUpdateFormInputValues = {
-    summaryId?: string;
     text?: string;
     tags?: string[];
     createdAt?: string;
 };
 export declare type SummaryUpdateFormValidationValues = {
-    summaryId?: ValidationFunction<string>;
     text?: ValidationFunction<string>;
     tags?: ValidationFunction<string>;
     createdAt?: ValidationFunction<string>;
@@ -31,7 +29,6 @@ export declare type SummaryUpdateFormValidationValues = {
 export declare type PrimitiveOverrideProps<T> = Partial<T> & React.DOMAttributes<HTMLDivElement>;
 export declare type SummaryUpdateFormOverridesProps = {
     SummaryUpdateFormGrid?: PrimitiveOverrideProps<GridProps>;
-    summaryId?: PrimitiveOverrideProps<TextFieldProps>;
     text?: PrimitiveOverrideProps<TextFieldProps>;
     tags?: PrimitiveOverrideProps<TextFieldProps>;
     createdAt?: PrimitiveOverrideProps<TextFieldProps>;

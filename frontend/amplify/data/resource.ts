@@ -58,7 +58,6 @@ const schema = a.schema({
   
   Feed: a
     .model({
-      feedId: a.id().required(),
       name: a.string().required(),
       url: a.string().required(),
       description: a.string(),
@@ -72,7 +71,6 @@ const schema = a.schema({
 
   Article: a
     .model({
-      articleId: a.id().required(),
       url: a.string().required(),
       title: a.string().required(),
       fullText: a.string().required(),
@@ -86,7 +84,6 @@ const schema = a.schema({
 
   Summary: a
     .model({
-      summaryId: a.id().required(),
       text: a.string().required(),
       tags: a.string().array(),
       createdAt: a.datetime(),

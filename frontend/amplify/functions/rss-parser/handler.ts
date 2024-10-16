@@ -16,7 +16,6 @@ export const handler = async (event: { arguments: { feedUrl: string, websiteId: 
     // Create or update the Feed
     const feedId = uuidv4();
     await client.models.Feed.create({
-      feedId,
       name: feed.title || 'Unnamed Feed',
       url: feedUrl,
       description: feed.description,
@@ -28,7 +27,6 @@ export const handler = async (event: { arguments: { feedUrl: string, websiteId: 
     for (const item of feed.items) {
       const articleId = uuidv4();
       await client.models.Article.create({
-        articleId,
         url: item.link || '',
         title: item.title || 'Untitled',
         fullText: item.content || item.contentSnippet || '',

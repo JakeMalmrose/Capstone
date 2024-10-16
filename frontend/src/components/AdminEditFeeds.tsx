@@ -2,8 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import { Alert } from '@aws-amplify/ui-react';
 import type { Schema } from '../../amplify/data/resource';
-import { FeedCreateFormInputValues } from '../../ui-components/FeedCreateForm';
-import { ExtendedFeedCreateForm } from './extended-forms/ExtendedFeedCreateForm';
+import FeedCreateForm from '../../ui-components/FeedCreateForm';
 import { Button } from '@aws-amplify/ui-react';
 import { Link, useParams } from 'react-router-dom';
 
@@ -63,18 +62,20 @@ function AdminEditFeeds() {
                 {showForm ? 'Cancel' : '+ Add Website'}
             </button>
             {showForm && (
-                <ExtendedFeedCreateForm
-                    websiteId={websiteId}
-                    onSuccess={() => {
-                        setShowForm(false);
-                        fetchFeeds();
-                    }}
-                    onError={(fields: FeedCreateFormInputValues, errorMessage: string) => {
-                        setError(`Failed to create feed: ${errorMessage}`);
-                        console.error('Form fields at time of error:', fields);
-                    }}
-                    
-                />
+                <FeedCreateForm
+                onSubmit={(fields: any) => {
+                  // Add the websiteId to the form data
+                  return { ...fields, websiteId };
+                }}
+                onSuccess={() => {
+                  setShowForm(false);
+                  fetchFeeds();
+                }}
+                onError={(fields: any, errorMessage: any) => {
+                  setError(`Failed to create feed: ${errorMessage}`);
+                  console.error('Form fields at time of error:', fields);
+                }}
+              />
             )}
             <ul>
                 {feeds.map(feed => (

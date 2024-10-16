@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { generateClient } from 'aws-amplify/data';
+import { generateClient } from 'aws-amplify/api';
 import { Collection, Card, Heading, Text, View, Loader } from '@aws-amplify/ui-react';
 import type { Schema } from '../../amplify/data/resource';
 

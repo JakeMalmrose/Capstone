@@ -2,7 +2,7 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { sayHello } from "../functions/say-hello/resource";
 import { summarize } from "../functions/summarize/resource";
 import { extractUrls } from "../functions/extract-urls/resource";
-import { rssParser } from "../functions/rss-parser/resource";
+import { processRssFeed } from "../functions/rss-parser/resource";
 
 const schema = a.schema({
   //functions
@@ -43,7 +43,7 @@ const schema = a.schema({
       })
     )
     .authorization(allow => [allow.authenticated()])
-    .handler(a.handler.function(rssParser)),
+    .handler(a.handler.function(processRssFeed)),
 
   //data models
   Website: a

@@ -3,7 +3,7 @@ import { Authenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import { Link, Route, Routes } from 'react-router-dom';
 import AdminWebsites from './components/AdminWebsites.tsx';
-import WebsiteArticles from './components/WebsiteArticles';
+import WebsiteFeeds from './components/WebsiteFeeds.tsx';
 import WebsiteList from './components/WebsiteList';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import Home from './components/Home';
@@ -60,11 +60,11 @@ function App() {
               <Route path="/websites" element={<WebsiteList />}/>
               <Route path="/feeds"/>
               <Route path="/summaries"/>
-              <Route path="/website/:websiteId" element={<WebsiteArticles />} />
+              <Route path="/website/:websiteId" element={<WebsiteFeeds />} />
               {!isAdmin && (
                 <Route path="/admin/websites" element={<AdminWebsites />} />
               )}
-              {true && (
+              {!isAdmin && (
                 <Route path="/admin/editFeeds/:websiteId" element={<AdminEditFeeds />} />
               )}
             </Routes>

@@ -13,6 +13,24 @@ const feedDataType = a.customType({
   websiteId: a.id(),
 });
 
+const articleDataType = a.customType({
+  url: a.string(),
+  title: a.string(),
+  fullText: a.string(),
+  createdAt: a.string(),
+});
+
+const processRssFeedReturnType = a.customType({
+  success: a.boolean(),
+  feedData: feedDataType,
+  articlesData: articleDataType,
+  message: a.string(),
+});
+
+
+
+
+
 const schema = a.schema({
   // Functions
   sayHello: a
@@ -43,14 +61,12 @@ const schema = a.schema({
     .handler(a.handler.function(extractUrls)),
 
   processRssFeed: a
-    .mutation()
+    .query()
     .arguments({
       feedUrl: a.string(),
       websiteId: a.string(),
     })
-    .returns(
-      a.json()
-    )
+    .returns(processRssFeedReturnType)
     .authorization((allow) => [allow.authenticated()])
     .handler(a.handler.function(processRssFeed)),
 
@@ -125,6 +141,8 @@ const schema = a.schema({
       allow.authenticated().to(["read"]),
       allow.groups(["Admin"]),
     ]),
+
+    // Custom Types
 });
 
 export type Schema = ClientSchema<typeof schema>;

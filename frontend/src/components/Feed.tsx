@@ -26,7 +26,7 @@ interface ArticleData {
 interface ProcessRssFeedResponse {
   success: boolean;
   feedData: FeedData;
-  articlesData: ArticleData[];
+  articlesData: ArticleData;
 }
 
 function Feed() {
@@ -47,8 +47,9 @@ function Feed() {
 
       // Fetch the articles for this feed
       const articlesResponse = await client.models.Article.list({
-        filter: { feedId: { eq: feedId } },
+        filter: { feedId: { eq: feedId } }
       });
+      console.log(articlesResponse.data);
       setArticles(articlesResponse.data);
     } catch (err) {
       console.error('Error fetching feed:', err);
@@ -66,44 +67,43 @@ function Feed() {
       if (!accessToken) {
         throw new Error('No access token found');
       }
-      // Call the mutation with the user's token
-      const response = await client.mutations.processRssFeed(
+      // Call the query with the user's token
+      const response = await client.queries.processRssFeed(
         { feedUrl: feed.url, websiteId: feed.websiteId },
         { authToken: accessToken.toString() }
       );
 
-      // Cast the response data to our defined interface
-      const responseData = response.data as ProcessRssFeedResponse;
+      console.log("before casting")
+      console.log(response.data)
+      console.log("after casting")
 
-      if (responseData?.success) {
-        const { feedData, articlesData } = responseData;
+         
+
+      if (response.data?.success) {
+        console.log("post success");
+        const { feedData, articlesData } = response.data as unknown as ProcessRssFeedResponse;
         if (!feedData || !articlesData) {
           throw new Error('Invalid data received from processRssFeed');
         }
-        // Create the feed in the database
-        const createdFeedResponse = await client.models.Feed.create({
+
+        // Create the feed
+        if (!feedId) {
+          throw new Error('Feed name is required');
+        }
+        if (!feedData.name) {
+          throw new Error('Feed name is required');
+        }
+        await client.models.Feed.update({
+          id: feedId,
           name: feedData.name,
-          url: feedData.url,
-          description: feedData.description,
-          type: feedData.type as any, // Cast if necessary
-          websiteId: feedData.websiteId,
-        });
-        const createdFeed = createdFeedResponse.data;
-        if (!createdFeed || !createdFeed.id) {
-          throw new Error('Failed to create feed in the database');
-        }
-        const newFeedId = createdFeed.id;
-        // Create the articles in the database, linking them to the feed
-        for (const articleData of articlesData) {
-          await client.models.Article.create({
-            url: articleData.url,
-            title: articleData.title,
-            fullText: articleData.fullText,
-            createdAt: articleData.createdAt,
-            feedId: newFeedId,
-          });
-        }
-        // Refresh the feed and articles
+        })
+
+        // Create the article
+        console.log(await client.models.Article.create({
+          ...articlesData,
+          feedId: feedId,
+        }));
+
         await fetchFeedArticles();
       } else {
         console.log(response.data);
@@ -139,6 +139,7 @@ function Feed() {
             <Heading level={3}>{article.title}</Heading>
             <Text>{article.url}</Text>
             <Text>{article.fullText}</Text>
+            <Text>Article feed id {article.feedId}</Text>
           </Card>
         )}
       </Collection>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/api';
 import { Collection, Card, Heading, Text, View, Loader, Button } from '@aws-amplify/ui-react';
+import { fetchAuthSession } from 'aws-amplify/auth';
 import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
@@ -15,8 +16,27 @@ function Feed() {
 
   const processRss = async () => {
     if (feed === null) return;
-    await client.mutations.processRssFeed({ feedUrl: feed.url, websiteId: feed.websiteId });
-  }
+    try {
+      // Fetch the current auth session
+      const { accessToken } = (await fetchAuthSession()).tokens ?? {};
+      if (!accessToken) {
+        throw new Error('No access token found');
+      }
+      // Call the mutation with the user's token
+      const response = await client.mutations.processRssFeed(
+        { feedUrl: feed.url, websiteId: feed.websiteId },
+        { authToken: accessToken.toString() }
+      );
+      if (response.data?.success) {
+        window.location.reload();
+      } else {
+        console.log(response.data);
+      }
+    } catch (err) {
+      console.error('Error fetching auth session:', err);
+      setError('Failed to fetch auth session. Please try again later.');
+    }
+  };
 
   useEffect(() => {
     async function fetchFeedArticles() {

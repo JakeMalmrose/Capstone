@@ -80,7 +80,7 @@ const schema = a.schema({
       feed: a.belongsTo("Feed", "feedId"),
       summaries: a.hasMany("Summary", "articleId"),
     })
-    .authorization(allow => [allow.owner(), allow.authenticated().to(["read"])]),
+    .authorization(allow => [allow.owner(), allow.authenticated().to(["read"]), allow.custom()]),
 
   Summary: a
     .model({
@@ -114,5 +114,9 @@ export const data = defineData({
   schema,
   authorizationModes: {
     defaultAuthorizationMode: "userPool",
+    lambdaAuthorizationMode: {
+      function: processRssFeed,
+    },
   },
 });
+

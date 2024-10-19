@@ -5,6 +5,14 @@ import { summarize } from "../functions/summarize/resource";
 import { extractUrls } from "../functions/extract-urls/resource";
 import { processRssFeed } from "../functions/rss-parser/resource";
 
+const feedDataType = a.customType({
+  name: a.string(),
+  url: a.string(),
+  description: a.string(),
+  type: a.enum(["RSS", "OTHER"]),
+  websiteId: a.id(),
+});
+
 const schema = a.schema({
   // Functions
   sayHello: a
@@ -41,10 +49,7 @@ const schema = a.schema({
       websiteId: a.string(),
     })
     .returns(
-      a.customType({
-        success: a.boolean(),
-        message: a.string(),
-      })
+      a.json()
     )
     .authorization((allow) => [allow.authenticated()])
     .handler(a.handler.function(processRssFeed)),
@@ -130,6 +135,6 @@ export const data = defineData({
     defaultAuthorizationMode: "userPool",
     lambdaAuthorizationMode: {
       function: processRssFeed,
-    },
+    }
   },
 });

@@ -5,6 +5,32 @@ import { summarize } from "../functions/summarize/resource";
 import { extractUrls } from "../functions/extract-urls/resource";
 import { processRssFeed } from "../functions/rss-parser/resource";
 
+const feedDataType = a.customType({
+  name: a.string(),
+  url: a.string(),
+  description: a.string(),
+  type: a.enum(["RSS", "OTHER"]),
+  websiteId: a.id(),
+});
+
+const articleDataType = a.customType({
+  url: a.string(),
+  title: a.string(),
+  fullText: a.string(),
+  createdAt: a.string(),
+});
+
+const processRssFeedReturnType = a.customType({
+  success: a.boolean(),
+  feedData: feedDataType,
+  articlesData: articleDataType,
+  message: a.string(),
+});
+
+
+
+
+
 const schema = a.schema({
   // Functions
   sayHello: a
@@ -35,17 +61,12 @@ const schema = a.schema({
     .handler(a.handler.function(extractUrls)),
 
   processRssFeed: a
-    .mutation()
+    .query()
     .arguments({
       feedUrl: a.string(),
       websiteId: a.string(),
     })
-    .returns(
-      a.customType({
-        success: a.boolean(),
-        message: a.string(),
-      })
-    )
+    .returns(processRssFeedReturnType)
     .authorization((allow) => [allow.authenticated()])
     .handler(a.handler.function(processRssFeed)),
 
@@ -122,8 +143,9 @@ const schema = a.schema({
       allow.authenticated().to(["read"]),
       allow.groups(["Admin"]),
     ]),
-})
-.authorization((allow) => [allow.resource(processRssFeed)]);
+
+    // Custom Types
+});
 
 export type Schema = ClientSchema<typeof schema>;
 

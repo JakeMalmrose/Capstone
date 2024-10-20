@@ -2,30 +2,37 @@ import axios from 'axios';
 import type { Schema } from "../../data/resource"
 
 export const handler: Schema["extractUrls"]["functionHandler"] = async (event) => {
-  const { url } = event.arguments;
+  const { url, typeOfLink } = event.arguments;
 
-  if (typeof url !== 'string') {
-    throw new Error('URL must be a string');
+  if (typeof url !== 'string' || typeof typeOfLink !== 'string') {
+    throw new Error('URL and typeOfLink must be strings');
   }
 
-  return extractUrls(url);
+  return extractUrls(url, typeOfLink);
 }
 
-const extractUrls = async function(url: string) {
+const extractUrls = async function(url: string, typeOfLink: string) {
   try {
     const response = await axios.get(url);
     const html = response.data;
+    let urlRegex: RegExp;
 
-    // Regular expression to match href attributes
-    const hrefRegex = /href=["'](https?:\/\/[^"']+|\/[^"']+)["']/gi;
+    if (typeOfLink === "XML") {
+      urlRegex = /href=["'](https?:\/\/[^"']+\.xml)["']/gi;
+    } else {
+      // Default regex for general URLs
+      urlRegex = /href=["'](https?:\/\/[^"']+|\/[^"']+)["']/gi;
+    }
+
     const urls: string[] = [];
+    let match;
 
-    for (const match of html.matchAll(hrefRegex)) {
-      const href = match[1];
-      if (href.startsWith('http')) {
-        urls.push(href);
-      } else if (href.startsWith('/')) {
-        urls.push(new URL(href, url).href);
+    while ((match = urlRegex.exec(html)) !== null) {
+      const extractedUrl = typeOfLink === "XML" ? match[1] : match[1];
+      if (extractedUrl.startsWith('http')) {
+        urls.push(extractedUrl);
+      } else if (extractedUrl.startsWith('/')) {
+        urls.push(new URL(extractedUrl, url).href);
       }
     }
 

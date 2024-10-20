@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { generateClient } from 'aws-amplify/api';
-import { Button, Heading, Text, View, TextField } from '@aws-amplify/ui-react';
+import { Button, Heading, Text, View, TextField, SelectField } from '@aws-amplify/ui-react';
 import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
 
 function Extractor() {
   const [url, setUrl] = useState('');
+  const [linkType, setLinkType] = useState('ANY');
   const [extractedUrls, setExtractedUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +17,10 @@ function Extractor() {
     setError(null);
     setExtractedUrls([]);
     try {
-      const result = await client.queries.extractUrls({ url: url });
+      if(linkType !== 'ANY' && linkType !== 'XML') {
+        throw new Error('Invalid link type');
+      }
+      const result = await client.queries.extractUrls({ url: url, typeOfLink: linkType });
       if (result.data) {
         setExtractedUrls(result.data.filter((url: string | null) => url !== null) as string[]);
       } else if (result.errors) {
@@ -42,6 +46,16 @@ function Extractor() {
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://example.com"
         />
+      </View>
+      <View marginTop="1rem">
+        <SelectField
+          label="Link Type"
+          value={linkType}
+          onChange={(e) => setLinkType(e.target.value)}
+        >
+          <option value="ANY">Any Links</option>
+          <option value="XML">XML Links</option>
+        </SelectField>
       </View>
       <Button
         onClick={handleExtractUrls}

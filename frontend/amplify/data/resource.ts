@@ -55,6 +55,7 @@ const schema = a.schema({
     .query()
     .arguments({
       url: a.string(),
+      typeOfLink: a.enum(["XML", "ANY"]),
     })
     .returns(a.string().array())
     .authorization((allow) => [allow.authenticated()])

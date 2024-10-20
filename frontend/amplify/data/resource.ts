@@ -23,7 +23,7 @@ const articleDataType = a.customType({
 const processRssFeedReturnType = a.customType({
   success: a.boolean(),
   feedData: feedDataType,
-  articlesData: articleDataType,
+  articlesData: a.json(),
   message: a.string(),
 });
 

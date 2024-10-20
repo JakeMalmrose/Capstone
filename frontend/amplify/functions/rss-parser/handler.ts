@@ -39,7 +39,7 @@ const processRssFeedHandler = async function(feedUrl: string, websiteId: string)
     return {
       success: true,
       feedData,
-      articlesData: articlesData[0],
+      articlesData: articlesData,
       message: `Processed ${articlesData.length} articles from the RSS feed.`,
     };
   } catch (error) {

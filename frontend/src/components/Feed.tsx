@@ -26,7 +26,7 @@ interface ArticleData {
 interface ProcessRssFeedResponse {
   success: boolean;
   feedData: FeedData;
-  articlesData: ArticleData;
+  articlesData: ArticleData[];
 }
 
 function Feed() {
@@ -75,6 +75,7 @@ function Feed() {
 
       console.log("before casting")
       console.log(response.data)
+      console.log(response)
       console.log("after casting")
 
          
@@ -98,12 +99,16 @@ function Feed() {
           name: feedData.name,
         })
 
-        // Create the article
-        console.log(await client.models.Article.create({
-          ...articlesData,
-          feedId: feedId,
-        }));
+        console.log("Articles data!!", articlesData);
 
+        // parse it into a json object
+        let newArticle = JSON.parse(articlesData.toString());
+        for (const articleData of newArticle) {
+          console.log(await client.models.Article.create({
+            ...articleData,
+            feedId: feedId,
+          }));
+        }
         await fetchFeedArticles();
       } else {
         console.log(response.data);

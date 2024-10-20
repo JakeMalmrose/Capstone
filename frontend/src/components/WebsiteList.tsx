@@ -29,18 +29,17 @@ function WebsiteList() {
 
   if (loading) return <Loader variation="linear" />;
   if (error) return <Text color="red">{error}</Text>;
-
   return (
-    <View padding="1rem">
+    <View padding="2rem">
       <Heading level={2}>All Websites</Heading>
       <Collection
         type="grid"
         items={websites}
         gap="1rem"
-        templateColumns="1fr 1fr 1fr"
+        templateColumns="repeat(auto-fill, minmax(300px, 1fr))"
       >
         {(website) => (
-          <Card key={website.id} padding="1rem">
+          <Card key={website.id} padding="1rem" variation="outlined">
             <Heading level={3}>{website.name}</Heading>
             <Text>{website.url}</Text>
             {website.category && <Text>Category: {website.category}</Text>}
@@ -60,6 +59,7 @@ function WebsiteList() {
       </Collection>
     </View>
   );
-}
+};
+
 
 export default WebsiteList;

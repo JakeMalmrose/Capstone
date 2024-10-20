@@ -153,8 +153,5 @@ export const data = defineData({
   schema,
   authorizationModes: {
     defaultAuthorizationMode: "userPool",
-    lambdaAuthorizationMode: {
-      function: processRssFeed,
-    }
   },
 });

@@ -47,8 +47,6 @@ function App() {
               <li><Link to="/Summarizer">Summarizer</Link></li>
               <li><Link to="/extractor">Extractor</Link></li>
               <li><Link to="/websites">Websites</Link></li>
-              <li><Link to="/feeds">Feeds</Link></li>
-              <li><Link to="/summaries">Summaries</Link></li>
               {!isAdmin && <li><Link to="/admin/websites">Manage Websites</Link></li>}
             </ul>
           </nav>
@@ -59,8 +57,6 @@ function App() {
               <Route path="/Summarizer" element={<Summarizer />}/>
               <Route path="/extractor" element={<Extractor />}/>
               <Route path="/websites" element={<WebsiteList />}/>
-              <Route path="/feeds"/>
-              <Route path="/summaries"/>
               <Route path="/website/:websiteId" element={<WebsiteFeeds />} />
               <Route path="/feed/:feedId" element={<Feed />} />
               {!isAdmin && (

@@ -4,6 +4,7 @@ import { sayHello } from "../functions/say-hello/resource";
 import { summarize } from "../functions/summarize/resource";
 import { extractUrls } from "../functions/extract-urls/resource";
 import { processRssFeed } from "../functions/rss-parser/resource";
+import { rssToDB } from "../functions/write-rss-to-db/resource";
 
 const feedDataType = a.customType({
   name: a.string(),
@@ -66,10 +67,21 @@ const schema = a.schema({
     .arguments({
       feedUrl: a.string(),
       websiteId: a.string(),
+      jwt: a.string(),
     })
     .returns(processRssFeedReturnType)
     .authorization((allow) => [allow.authenticated()])
     .handler(a.handler.function(processRssFeed)),
+
+  rssToDB: a
+    .mutation()
+    .arguments({
+      feedUrl: a.string(),
+      websiteId: a.string(),
+    })
+    .authorization((allow) => [allow.authenticated()])
+    .returns(a.customType({ success: a.boolean(), message: a.string() }))
+    .handler(a.handler.function(rssToDB)),
 
   // Data Models
   Website: a
@@ -144,6 +156,15 @@ const schema = a.schema({
       allow.authenticated().to(["read"]),
       allow.groups(["Admin"]),
     ]),
+
+    // UserFeedFavorites: a
+    // .model({
+    //   userId: a.id().required(),
+    //   feedId: a.id().required(),
+    //   user: a.belongsTo("User", "userId"),
+    //   feed: a.belongsTo("Feed", "feedId"),
+    // })
+    // .authorization((allow) => [allow.owner()]),
 
     // Custom Types
 });

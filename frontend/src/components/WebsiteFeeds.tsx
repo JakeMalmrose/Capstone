@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/api';
-import { Collection, Card, Heading, Text, View, Loader } from '@aws-amplify/ui-react';
+import { Collection, Card, Heading, Text, View, Loader, Button } from '@aws-amplify/ui-react';
 import type { Schema } from '../../amplify/data/resource';
+import { fetchAuthSession, JWT } from 'aws-amplify/auth';
 
 const client = generateClient<Schema>();
 
@@ -12,6 +13,7 @@ function WebsiteFeeds() {
   const [feeds, setFeeds] = useState<Schema['Feed']['type'][]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [token, setToken] = useState<JWT | null>(null);
 
   useEffect(() => {
     async function fetchWebsiteAndFeeds() {
@@ -38,6 +40,40 @@ function WebsiteFeeds() {
     fetchWebsiteAndFeeds();
   }, [websiteId]);
 
+  const writeRssToDB = async () => {
+    if (!website) return;
+    try {
+      const result = await client.mutations.rssToDB({ websiteId: website.id, feedUrl: 'https://example.com/feed', jwt: token }); 
+      console.log({
+        success: true,
+        message: result.data?.message || "RSS written to DB successfully"
+      });
+    } catch (err) {
+      console.log({
+        success: false,
+        message: (err instanceof Error ? err.message : "Unknown error") || "Error writing RSS to DB"
+      });
+    }
+  };
+
+  useEffect(() => {
+    async function fetchToken() {
+      try {
+        const session = await fetchAuthSession();
+        if (session) {
+          if (session.tokens?.accessToken) {
+            setToken(session.tokens.accessToken);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching token:', err);
+        setError('Failed to fetch token. Please try again later.');
+      }
+    }
+
+    fetchToken();
+  }, [token]);
+
   if (loading) return <Loader variation="linear" />;
   if (error) return <Text color="red">{error}</Text>;
   if (!website) return <Text>Website not found</Text>;
@@ -50,6 +86,9 @@ function WebsiteFeeds() {
       {website.tags && website.tags.length > 0 && (
         <Text>Tags: {website.tags.join(', ')}</Text>
       )}
+      <Button onClick={writeRssToDB} variation="primary" marginTop="1rem">
+        Write RSS to DB
+      </Button>
       <Collection
         type="list"
         items={feeds}

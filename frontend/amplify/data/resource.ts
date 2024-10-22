@@ -49,7 +49,8 @@ const schema = a.schema({
       text: a.string(),
     })
     .returns(a.string())
-    .authorization((allow) => [allow.authenticated()])
+    .authorization((allow) => [allow.authenticated(),
+      allow.publicApiKey(),])
     .handler(a.handler.function(summarize)),
 
   extractUrls: a
@@ -59,7 +60,8 @@ const schema = a.schema({
       typeOfLink: a.enum(["XML", "ANY"]),
     })
     .returns(a.string().array())
-    .authorization((allow) => [allow.authenticated()])
+    .authorization((allow) => [allow.authenticated(),
+      allow.publicApiKey(),])
     .handler(a.handler.function(extractUrls)),
 
   processRssFeed: a
@@ -70,7 +72,8 @@ const schema = a.schema({
       jwt: a.string(),
     })
     .returns(processRssFeedReturnType)
-    .authorization((allow) => [allow.authenticated()])
+    .authorization((allow) => [allow.authenticated(),
+      allow.publicApiKey(),])
     .handler(a.handler.function(processRssFeed)),
 
   rssToDB: a
@@ -79,7 +82,8 @@ const schema = a.schema({
       feedUrl: a.string(),
       websiteId: a.string(),
     })
-    .authorization((allow) => [allow.authenticated()])
+    .authorization((allow) => [allow.authenticated(),
+      allow.publicApiKey(),])
     .returns(a.customType({ success: a.boolean(), message: a.string() }))
     .handler(a.handler.function(rssToDB)),
 
@@ -95,6 +99,7 @@ const schema = a.schema({
     .authorization((allow) => [
       allow.owner(),
       allow.authenticated().to(["read"]),
+      allow.publicApiKey(),
       allow.groups(["Admin"]),
     ]),
 
@@ -111,6 +116,7 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.owner(), 
+      allow.publicApiKey(),
       allow.authenticated().to(["read"]),
     ]),
 
@@ -127,6 +133,7 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.owner(), 
+      allow.publicApiKey(),
       allow.authenticated().to(["read"]),
     ]),
 
@@ -140,7 +147,8 @@ const schema = a.schema({
       articleId: a.id(),
       article: a.belongsTo("Article", "articleId"),
     })
-    .authorization((allow) => [allow.owner(), allow.authenticated().to(["read"])]),
+    .authorization((allow) => [allow.owner(),
+      allow.publicApiKey(), allow.authenticated().to(["read"])]),
 
   Summarizer: a
     .model({
@@ -155,6 +163,7 @@ const schema = a.schema({
       allow.owner(),
       allow.authenticated().to(["read"]),
       allow.groups(["Admin"]),
+      allow.publicApiKey(),
     ]),
 
     // UserFeedFavorites: a
@@ -175,5 +184,8 @@ export const data = defineData({
   schema,
   authorizationModes: {
     defaultAuthorizationMode: "userPool",
+    apiKeyAuthorizationMode: {
+      expiresInDays: 32,
+    }
   },
 });

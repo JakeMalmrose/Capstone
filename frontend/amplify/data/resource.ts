@@ -5,6 +5,7 @@ import { summarize } from "../functions/summarize/resource";
 import { extractUrls } from "../functions/extract-urls/resource";
 import { processRssFeed } from "../functions/rss-parser/resource";
 import { rssToDB } from "../functions/write-rss-to-db/resource";
+import { fetchGNews } from "../functions/gnews/resource";
 
 const feedDataType = a.customType({
   name: a.string(),
@@ -98,6 +99,27 @@ const schema = a.schema({
     .returns(a.customType({ success: a.boolean(), message: a.string() }))
     .handler(a.handler.function(rssToDB)),
 
+  fetchGNews: a
+    .mutation()
+    .arguments({
+      country: a.string(),
+      category: a.string(),
+      websiteId: a.string().required(),
+      feedId: a.string().required(),
+    })
+    .returns(
+      a.customType({
+        success: a.boolean(),
+        message: a.string(),
+        articles: a.json().array()
+      })
+    )
+    .authorization((allow) => [
+      allow.authenticated(),
+      allow.publicApiKey(),
+    ])
+    .handler(a.handler.function(fetchGNews)),
+
   // Data Models
   UserPreferences: a
   .model({
@@ -150,7 +172,7 @@ const schema = a.schema({
       fullText: a.string(),
       tags: a.string().array(),
       createdAt: a.datetime(),
-      feedId: a.id(),
+      feedId: a.id().required(),
       feed: a.belongsTo("Feed", "feedId"),
       summaries: a.hasMany("Summary", "articleId"),
     })

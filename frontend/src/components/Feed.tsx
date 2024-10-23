@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/api';
-import { Collection, Card, Heading, Text, View, Loader, Button, Link } from '@aws-amplify/ui-react';
+import { Collection, Card, Heading, Text, View, Loader, Button, Link, Flex } from '@aws-amplify/ui-react';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import type { Schema } from '../../amplify/data/resource';
 
@@ -35,6 +35,12 @@ function Feed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [articles, setArticles] = useState<Schema['Article']['type'][]>([]);
+
+  const fetchGNews = async () => {
+    if (!feedId) return;
+    if (!feed) return;
+    await client.mutations.fetchGNews({ feedId: feedId, websiteId: feed.websiteId });
+  }
 
   const fetchFeedArticles = async () => {
     if (!feedId) return;
@@ -133,7 +139,10 @@ function Feed() {
   return (
     <View padding="1rem">
       <Button onClick={() => window.history.back()}>Back</Button>
-      <Button onClick={processRss}>Process RSS Feed</Button>
+      <Flex direction="row" gap="1rem">
+        <Button onClick={processRss}>Process RSS Feed</Button>
+        <Button onClick={fetchGNews}>Fetch GNews</Button>
+      </Flex>
       <Button onClick={() => window.location.reload()}>Refresh</Button>
       <Heading level={2}>{feed.name} Articles</Heading>
       <Text>{feed.url}</Text>

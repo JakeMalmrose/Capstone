@@ -14,7 +14,11 @@ export const handler: Schema["rssToDB"]["functionHandler"] = async (event) => {
         }
         
         console.log(`Processing RSS feed: ${feedUrl}`);
-        const websiteResponse = await client.models.Website.get({ id: websiteId });
+        const websiteResponse = await client.models.Website.get({ id: websiteId },
+            {
+                authMode: 'apiKey',
+            }
+        );
         const website = websiteResponse.data;
 
         if (!website) {
@@ -27,7 +31,7 @@ export const handler: Schema["rssToDB"]["functionHandler"] = async (event) => {
         {
             authMode: 'apiKey',
         })
-        return { success: true, message: 'Processed RSS feed, website: ' + website };
+        return { success: true, message: 'Processed RSS feed, website: ' + website.name };
     } catch (error) {
         console.error('Error processing RSS feed:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -37,11 +41,3 @@ export const handler: Schema["rssToDB"]["functionHandler"] = async (event) => {
         };
     };
 };
-
-const rssToDB = async function(feedUrl: string, websiteId: string){
-    
-}
-
-const getRssFeed = async function(feedUrl: string, websiteId: string){
-    
-}

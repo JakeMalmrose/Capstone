@@ -30,6 +30,17 @@ const processRssFeedReturnType = a.customType({
 
 
 
+const gNewsCategoryEnum = a.enum([
+  "general", "world", "nation", "business", "technology", 
+  "entertainment", "sports", "science", "health"
+]);
+
+const gNewsCountryEnum = a.enum([
+  "us", "gb", "au", "ca", "in"
+]);
+
+
+
 
 
 const schema = a.schema({
@@ -88,6 +99,18 @@ const schema = a.schema({
     .handler(a.handler.function(rssToDB)),
 
   // Data Models
+  UserPreferences: a
+  .model({
+    userId: a.string().required(),
+    gNewsCountry: gNewsCountryEnum,
+    gNewsCategory: gNewsCategoryEnum,
+    lastUpdated: a.datetime(),
+  })
+  .authorization((allow) => [
+    allow.owner(),
+    allow.authenticated().to(["read"]),
+  ]),
+
   Website: a
     .model({
       name: a.string().required(),

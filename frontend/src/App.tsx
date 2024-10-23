@@ -11,6 +11,7 @@ import Summarizer from './components/Summarizer.tsx';
 import Extractor from './components/Extractor';
 import AdminEditFeeds from './components/AdminEditFeeds.tsx'
 import Feed from './components/Feed.tsx'
+import Article from './components/Article'
 
 function App() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -59,6 +60,7 @@ function App() {
               <Route path="/websites" element={<WebsiteList />}/>
               <Route path="/website/:websiteId" element={<WebsiteFeeds />} />
               <Route path="/feed/:feedId" element={<Feed />} />
+              <Route path="/article/:articleId" element={<Article />} />
               {!isAdmin && (
                 <Route path="/admin/websites" element={<AdminWebsites />} />
               )}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/api';
-import { Collection, Card, Heading, Text, View, Loader, Button } from '@aws-amplify/ui-react';
+import { Collection, Card, Heading, Text, View, Loader, Button, Link } from '@aws-amplify/ui-react';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import type { Schema } from '../../amplify/data/resource';
 
@@ -144,6 +144,7 @@ function Feed() {
             <Heading level={3}>{article.title}</Heading>
             <Text>{article.url}</Text>
             <Text>{article.fullText}</Text>
+            <Link href={"/article/" + article.id}>View Article</Link>
             <Text>Article feed id {article.feedId}</Text>
           </Card>
         )}

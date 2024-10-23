@@ -43,7 +43,7 @@ function WebsiteFeeds() {
   const writeRssToDB = async () => {
     if (!website) return;
     try {
-      const result = await client.mutations.rssToDB({ websiteId: website.id, feedUrl: 'https://example.com/feed', jwt: token }); 
+      const result = await client.mutations.rssToDB({ websiteId: website.id, feedUrl: website.url }, { headers: { Authorization: `Bearer something` } }); 
       console.log({
         success: true,
         message: result.data?.message || "RSS written to DB successfully"
@@ -58,6 +58,7 @@ function WebsiteFeeds() {
 
   useEffect(() => {
     async function fetchToken() {
+      return;
       try {
         const session = await fetchAuthSession();
         if (session) {

@@ -57,7 +57,7 @@ const schema = a.schema({
     .query()
     .arguments({
       url: a.string(),
-      typeOfLink: a.enum(["XML", "ANY"]),
+      typeOfLink: a.enum(["XML", "RSS", "ANY"]),
     })
     .returns(a.string().array())
     .authorization((allow) => [allow.authenticated(),

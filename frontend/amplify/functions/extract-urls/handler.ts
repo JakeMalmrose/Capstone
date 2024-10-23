@@ -19,6 +19,8 @@ const extractUrls = async function(url: string, typeOfLink: string) {
 
     if (typeOfLink === "XML") {
       urlRegex = /href=["'](https?:\/\/[^"']+\.xml)["']/gi;
+    } else if(typeOfLink === "rss") {
+      urlRegex = /href=["'](https?:\/\/[^"']+\.rss)["']/gi;
     } else {
       // Default regex for general URLs
       urlRegex = /href=["'](https?:\/\/[^"']+|\/[^"']+)["']/gi;

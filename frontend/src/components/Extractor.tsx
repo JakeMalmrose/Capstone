@@ -55,6 +55,7 @@ function Extractor() {
         >
           <option value="ANY">Any Links</option>
           <option value="XML">XML Links</option>
+          <option value="RSS">RSS Links</option>
         </SelectField>
       </View>
       <Button

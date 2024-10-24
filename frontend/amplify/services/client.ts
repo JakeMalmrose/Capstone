@@ -1,6 +1,8 @@
 import { Amplify } from '@aws-amplify/core';
 import { generateClient } from "@aws-amplify/api";
 import type { Schema } from "../data/resource";
+//@ts-ignore
+import outputs from "../outputs.json";
 
 
 const amplifyConfig = {
@@ -11,7 +13,7 @@ const amplifyConfig = {
   aws_appsync_authenticationType: 'API_KEY'
 };
 
-Amplify.configure(amplifyConfig);
+Amplify.configure(outputs);
 
 const client = generateClient<Schema>({
     authMode: 'apiKey'

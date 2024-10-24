@@ -48,14 +48,45 @@ function Websites() {
     await fetchWebsites();
   }
 
+  async function createSummarizers() {
+    let openaiModel = await client.models.Summarizer.list({
+      filter: {
+        name: { eq: "OpenAI GPT-3.5" }
+      }
+    });
+    await client.models.Summarizer.update({
+      id: openaiModel.data[0].id,
+      name: "OpenAI",
+    })
+    // try{console.log(await client.models.Summarizer.create({
+    //   name: "OpenAI",
+    //   description: "Fast, reliable summarization using GPT-3.5-turbo",
+    //   tier: "FREE",
+    // }));
+    
+    // console.log(await client.models.Summarizer.create({
+    //   name: "Claude",
+    //   description: "High-quality summarization using Anthropic's Claude",
+    //   tier: "PRO"
+    // }));
+    
+    // console.log(await client.models.Summarizer.create({
+    //   name: "Local LLaMA",
+    //   description: "Privacy-focused summarization using local LLaMA model",
+    //   tier: "FREE"
+    // }));
+    console.log("Summarizers created");
+  }
+
   function handleCreateError(fields: WebsiteCreateFormInputValues, errorMessage: string) {
-    setError(`Failed to create website: ${errorMessage}`);
+    //setError(`Failed to create website: ${errorMessage}`);
     console.error('Form fields at time of error:', fields);
   }
 
   return (
     <div>
       <h1>Websites</h1>
+      <Button onClick={createSummarizers}>Create Summarizers</Button>
       {error && <Alert variation="error">{error}</Alert>}
       <button onClick={() => setShowForm(!showForm)}>
         {showForm ? 'Cancel' : '+ Add Website'}
@@ -77,6 +108,7 @@ function Websites() {
               variation="primary"
               marginTop="1rem"
             >Edit feeds</Button>
+            
           </li>
         ))}
       </ul>

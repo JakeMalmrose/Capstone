@@ -1,3 +1,4 @@
+// amplify/functions/summarize/resource.ts
 import { defineFunction, secret } from "@aws-amplify/backend";
 
 export const summarize = defineFunction({
@@ -5,8 +6,8 @@ export const summarize = defineFunction({
   entry: "./handler.ts",
   environment: {
     OPENAI_API_KEY: secret("openai-api-key"),
-    OPENAI_MODEL: "gpt-3.5-turbo", // Default model; can be swapped out
-    SYSTEM_PROMPT:
-      "You are a news article summarizer. You are given a news article and you output a 1 paragraph summary of the article.",
+    ANTHROPIC_API_KEY: secret("anthropic-api-key"),
+    OLLAMA_BASE_URL: "http://localhost:11434", // This could also be a secret if needed
   },
+  timeoutSeconds: 30,
 });

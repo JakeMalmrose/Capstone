@@ -59,10 +59,14 @@ const schema = a.schema({
     .query()
     .arguments({
       text: a.string(),
+      articleId: a.string(),
+      summarizerId: a.string(),
     })
     .returns(a.string())
-    .authorization((allow) => [allow.authenticated(),
-      allow.publicApiKey(),])
+    .authorization((allow) => [
+      allow.authenticated(),
+      allow.publicApiKey(),
+    ])
     .handler(a.handler.function(summarize)),
 
   extractUrls: a
@@ -197,7 +201,6 @@ const schema = a.schema({
 
   Summarizer: a
     .model({
-      summarizerId: a.id().required(),
       name: a.string().required(),
       description: a.string(),
       tags: a.string().array(),

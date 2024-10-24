@@ -6,6 +6,7 @@ import { summarize } from './functions/summarize/resource';
 import { extractUrls } from './functions/extract-urls/resource';
 import { processRssFeed } from './functions/rss-parser/resource';
 import { rssToDB } from './functions/write-rss-to-db/resource';
+import { fetchGNews } from './functions/gnews/resource';
 
 defineBackend({
   auth,
@@ -15,4 +16,5 @@ defineBackend({
   extractUrls,
   processRssFeed,
   rssToDB,
+  fetchGNews,
 });

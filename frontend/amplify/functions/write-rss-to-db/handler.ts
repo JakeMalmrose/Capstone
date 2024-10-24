@@ -1,10 +1,6 @@
 import { Amplify } from "aws-amplify";
 import type { Schema } from "../../data/resource";
-import { generateClient } from "@aws-amplify/api";
-import outputs from "../../../amplify_outputs.json";
-
-Amplify.configure(outputs);
-const client = generateClient<Schema>();
+import client from "../../services/client";
 
 export const handler: Schema["rssToDB"]["functionHandler"] = async (event) => {
     try{

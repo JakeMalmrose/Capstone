@@ -3,7 +3,7 @@ import axios from 'axios';
 import type { Schema } from "../../data/resource";
 import { generateClient } from "@aws-amplify/api";
 import { Amplify } from '@aws-amplify/core';
-import outputs from "../../../amplify_outputs.json";
+import client from '../../services/client';
 
 type Nullable<T> = T | null;
 
@@ -71,12 +71,7 @@ const fetchGNewsArticles = async function(
 
     const data = response.data as GNewsResponse;
 
-    Amplify.configure(outputs);
-
-    // Initialize Amplify client for database operations
-    const client = generateClient<Schema>({
-      authMode: 'apiKey'
-    });
+    
 
     // Process articles
     const articles = data.articles.map((article) => ({

@@ -1,15 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/api';
 import { 
-  Collection, 
   Card, 
   Heading, 
   Text, 
   View, 
   Loader, 
-  Button, 
-  Link,
   SelectField,
   Alert,
   Flex,

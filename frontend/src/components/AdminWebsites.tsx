@@ -75,10 +75,14 @@ function Websites() {
       description: "Privacy-focused summarization using local LLaMA model",
       tier: "FREE"
     }));
+    }
+    catch (error) {
+      console.log("Error creating summarizers:", error);
+    }
     console.log("Summarizers created");
   }
 
-  function handleCreateError(fields: WebsiteCreateFormInputValues, errorMessage: string) {
+  function handleCreateError(fields: WebsiteCreateFormInputValues) {
     //setError(`Failed to create website: ${errorMessage}`);
     console.error('Form fields at time of error:', fields);
   }

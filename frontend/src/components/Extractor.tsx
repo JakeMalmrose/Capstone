@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { generateClient } from 'aws-amplify/api';
 import { Button, Heading, Text, View, TextField, SelectField } from '@aws-amplify/ui-react';
 import type { Schema } from '../../amplify/data/resource';

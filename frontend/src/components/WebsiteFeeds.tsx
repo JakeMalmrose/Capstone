@@ -63,6 +63,7 @@ function WebsiteFeeds() {
         const session = await fetchAuthSession();
         if (session) {
           if (session.tokens?.accessToken) {
+            //@ts-ignore
             setToken(session.tokens.accessToken);
           }
         }

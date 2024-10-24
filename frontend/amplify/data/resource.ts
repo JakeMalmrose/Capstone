@@ -1,5 +1,5 @@
 // resource.ts
-import { type ClientSchema, a, defineData, defineFunction } from "@aws-amplify/backend";
+import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { sayHello } from "../functions/say-hello/resource";
 import { summarize } from "../functions/summarize/resource";
 import { extractUrls } from "../functions/extract-urls/resource";
@@ -15,12 +15,12 @@ const feedDataType = a.customType({
   websiteId: a.id(),
 });
 
-const articleDataType = a.customType({
-  url: a.string(),
-  title: a.string(),
-  fullText: a.string(),
-  createdAt: a.string(),
-});
+// const articleDataType = a.customType({
+//   url: a.string(),
+//   title: a.string(),
+//   fullText: a.string(),
+//   createdAt: a.string(),
+// });
 
 const processRssFeedReturnType = a.customType({
   success: a.boolean(),

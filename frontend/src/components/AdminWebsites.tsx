@@ -49,32 +49,32 @@ function Websites() {
   }
 
   async function createSummarizers() {
-    let openaiModel = await client.models.Summarizer.list({
-      filter: {
-        name: { eq: "OpenAI GPT-3.5" }
-      }
-    });
-    await client.models.Summarizer.update({
-      id: openaiModel.data[0].id,
-      name: "OpenAI",
-    })
-    // try{console.log(await client.models.Summarizer.create({
+    // let openaiModel = await client.models.Summarizer.list({
+    //   filter: {
+    //     name: { eq: "OpenAI GPT-3.5" }
+    //   }
+    // });
+    // await client.models.Summarizer.update({
+    //   id: openaiModel.data[0].id,
     //   name: "OpenAI",
-    //   description: "Fast, reliable summarization using GPT-3.5-turbo",
-    //   tier: "FREE",
-    // }));
+    // })
+    try{console.log(await client.models.Summarizer.create({
+      name: "OpenAI",
+      description: "Fast, reliable summarization using GPT-3.5-turbo",
+      tier: "FREE",
+    }));
     
-    // console.log(await client.models.Summarizer.create({
-    //   name: "Claude",
-    //   description: "High-quality summarization using Anthropic's Claude",
-    //   tier: "PRO"
-    // }));
+    console.log(await client.models.Summarizer.create({
+      name: "Claude",
+      description: "High-quality summarization using Anthropic's Claude",
+      tier: "PRO"
+    }));
     
-    // console.log(await client.models.Summarizer.create({
-    //   name: "Local LLaMA",
-    //   description: "Privacy-focused summarization using local LLaMA model",
-    //   tier: "FREE"
-    // }));
+    console.log(await client.models.Summarizer.create({
+      name: "Local LLaMA",
+      description: "Privacy-focused summarization using local LLaMA model",
+      tier: "FREE"
+    }));
     console.log("Summarizers created");
   }
 

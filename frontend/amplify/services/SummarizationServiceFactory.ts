@@ -3,6 +3,7 @@ import { LLMClient, LLMConfig } from './llmClients/LLMClient';
 import { AnthropicClient } from './llmClients/AnthropicClient';
 import { OpenAIClient } from './llmClients/OpenAIClient';
 //import { OllamaClient } from './llmClients/OllamaClient';
+import { LocalClient } from './llmClients/LocalClient';
 import { SummarizationService } from './SummarizationService';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 
@@ -30,10 +31,10 @@ export class SummarizationServiceFactory {
           llmClient = new AnthropicClient(process.env.ANTHROPIC_API_KEY!);
           config = { model: 'claude-3-sonnet-20240229' };
           break;
-        // case 'ollama':
-        //   llmClient = new OllamaClient();
-        //   config = { model: 'llama2' };
-        //   break;
+        case 'local':
+          llmClient = new LocalClient();
+          config = { model: 'hermes-3-llama-3.1-8b' };
+          break;
         default:
           throw new Error(`Unsupported summarizer type: ${summarizer.name}`);
       }

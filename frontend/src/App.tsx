@@ -1,21 +1,55 @@
 import { useState, useEffect } from 'react';
 import { Authenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
-import { Link, Route, Routes } from 'react-router-dom';
-import AdminWebsites from './components/AdminWebsites.tsx';
-import WebsiteFeeds from './components/WebsiteFeeds.tsx';
-import WebsiteList from './components/WebsiteList';
+import { Link as RouterLink, Route, Routes } from 'react-router-dom';
+import { 
+  AppBar, 
+  Toolbar, 
+  Button, 
+  Box, 
+  Container,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  ListItemIcon,
+  IconButton,
+  useMediaQuery,
+  useTheme,
+  CssBaseline,
+} from '@mui/material';
+import {
+  Menu as MenuIcon,
+  Home as HomeIcon,
+  Article as ArticleIcon,
+  Link as LinkIcon,
+  Language as LanguageIcon,
+  AdminPanelSettings as AdminIcon,
+} from '@mui/icons-material';
+import { ThemeProvider } from '@mui/material/styles';
+import { theme } from './Theme';
 import { fetchAuthSession } from 'aws-amplify/auth';
+
+// Import your components
+import AdminWebsites from './components/AdminWebsites';
+import WebsiteFeeds from './components/WebsiteFeeds';
+import WebsiteList from './components/WebsiteList';
 import Home from './components/Home';
-import Summarizer from './components/Summarizer.tsx';
+import Summarizer from './components/Summarizer';
 import Extractor from './components/Extractor';
-import AdminEditFeeds from './components/AdminEditFeeds.tsx'
-import Feed from './components/Feed.tsx'
-import Article from './components/Article'
+import AdminEditFeeds from './components/AdminEditFeeds';
+import Feed from './components/Feed';
+import Article from './components/Article';
+
+const DRAWER_WIDTH = 240;
 
 function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
 
   useEffect(() => {
     async function checkAdminStatus() {
@@ -34,44 +68,157 @@ function App() {
     checkAdminStatus();
   }, []);
 
+  const navigationItems = [
+    { text: 'Home', icon: <HomeIcon />, path: '/' },
+    { text: 'Summarizer', icon: <ArticleIcon />, path: '/Summarizer' },
+    { text: 'Extractor', icon: <LinkIcon />, path: '/extractor' },
+    { text: 'Websites', icon: <LanguageIcon />, path: '/websites' },
+    ...(isAdmin ? [{ text: 'Admin', icon: <AdminIcon />, path: '/admin/websites' }] : []),
+  ];
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const drawer = (
+    <Box sx={{ mt: 1 }}>
+      <List>
+        {navigationItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              component={RouterLink}
+              to={item.path}
+              onClick={() => isMobile && handleDrawerToggle()}
+              sx={{
+                color: 'text.primary',
+                '&.active': {
+                  backgroundColor: 'rgba(156, 39, 176, 0.16)',
+                },
+              }}
+            >
+              <ListItemIcon sx={{ color: 'inherit' }}>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh',
+          backgroundColor: 'background.default'
+        }}>
+          Loading...
+        </Box>
+      </ThemeProvider>
+    );
   }
 
   return (
-    <Authenticator>
-      {({ signOut }) => (
-        <>
-          <nav>
-            <ul>
-              <li><Link to="/">Home</Link></li>
-              <li><Link to="/Summarizer">Summarizer</Link></li>
-              <li><Link to="/extractor">Extractor</Link></li>
-              <li><Link to="/websites">Websites</Link></li>
-              {!isAdmin && <li><Link to="/admin/websites">Manage Websites</Link></li>}
-            </ul>
-          </nav>
-          <button className="sign-out-button" onClick={signOut}>Sign out</button>
-          <main>
-            <Routes>
-              <Route path="/" element={<Home />}/>
-              <Route path="/Summarizer" element={<Summarizer />}/>
-              <Route path="/extractor" element={<Extractor />}/>
-              <Route path="/websites" element={<WebsiteList />}/>
-              <Route path="/website/:websiteId" element={<WebsiteFeeds />} />
-              <Route path="/feed/:feedId" element={<Feed />} />
-              <Route path="/article/:articleId" element={<Article />} />
-              {!isAdmin && (
-                <Route path="/admin/websites" element={<AdminWebsites />} />
-              )}
-              {!isAdmin && (
-                <Route path="/admin/editFeeds/:websiteId" element={<AdminEditFeeds />} />
-              )}
-            </Routes>
-          </main>
-        </>
-      )}
-    </Authenticator>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Authenticator>
+        {({ signOut }) => (
+          <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+            <AppBar
+              position="fixed"
+              sx={{
+                width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
+                ml: { sm: `${DRAWER_WIDTH}px` },
+              }}
+            >
+              <Toolbar>
+                <IconButton
+                  color="inherit"
+                  aria-label="open drawer"
+                  edge="start"
+                  onClick={handleDrawerToggle}
+                  sx={{ mr: 2, display: { sm: 'none' } }}
+                >
+                  <MenuIcon />
+                </IconButton>
+                <Box sx={{ flexGrow: 1 }} />
+                <Button 
+                  color="inherit" 
+                  onClick={signOut}
+                  sx={{ 
+                    color: 'text.primary',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    }
+                  }}
+                >
+                  Sign out
+                </Button>
+              </Toolbar>
+            </AppBar>
+
+            <Box
+              component="nav"
+              sx={{ 
+                width: { sm: DRAWER_WIDTH }, 
+                flexShrink: { sm: 0 } 
+              }}
+            >
+              <Drawer
+                variant={isMobile ? 'temporary' : 'permanent'}
+                open={mobileOpen}
+                onClose={handleDrawerToggle}
+                ModalProps={{
+                  keepMounted: true,
+                }}
+                sx={{
+                  '& .MuiDrawer-paper': {
+                    boxSizing: 'border-box',
+                    width: DRAWER_WIDTH,
+                  },
+                  display: { xs: 'block', sm: 'block' },
+                }}
+              >
+                {drawer}
+              </Drawer>
+            </Box>
+
+            <Box
+              component="main"
+              sx={{
+                flexGrow: 1,
+                p: 3,
+                width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
+                mt: '64px',
+                overflow: 'auto',
+              }}
+            >
+              <Container maxWidth="lg">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/Summarizer" element={<Summarizer />} />
+                  <Route path="/extractor" element={<Extractor />} />
+                  <Route path="/websites" element={<WebsiteList />} />
+                  <Route path="/website/:websiteId" element={<WebsiteFeeds />} />
+                  <Route path="/feed/:feedId" element={<Feed />} />
+                  <Route path="/article/:articleId" element={<Article />} />
+                  {isAdmin && (
+                    <>
+                      <Route path="/admin/websites" element={<AdminWebsites />} />
+                      <Route path="/admin/editFeeds/:websiteId" element={<AdminEditFeeds />} />
+                    </>
+                  )}
+                </Routes>
+              </Container>
+            </Box>
+          </Box>
+        )}
+      </Authenticator>
+    </ThemeProvider>
   );
 }
 

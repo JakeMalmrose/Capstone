@@ -1,18 +1,17 @@
-import { Heading, Text, View } from '@aws-amplify/ui-react';
-
+import { Typography, Box } from '@mui/material';
 
 function Home() {  
-  
   return (
-    <View padding="1rem">
-        <Heading level={1}>Home</Heading>
-        <View marginTop="1rem">
-          <Text fontSize="1.2rem">
-            Dunno what im putting here, probably a list of user favorited websites
-          </Text>
-        </View>
-    </View>
-    
+    <Box sx={{ p: 2 }}>
+      <Typography variant="h2" component="h1">
+        Home
+      </Typography>
+      <Box sx={{ mt: 2 }}>
+        <Typography variant="h6">
+          Dunno what im putting here, probably a list of user favorited websites
+        </Typography>
+      </Box>
+    </Box>
   );
 }
 

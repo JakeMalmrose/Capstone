@@ -30,15 +30,15 @@ import {
 import { ThemeProvider } from '@mui/material/styles';
 import { theme } from './Theme';
 import { fetchAuthSession } from 'aws-amplify/auth';
-
-// Import your components
+//components
+import AdminPortal from './components/AdminPortal';
 import AdminWebsites from './components/AdminWebsites';
+import AdminEditFeeds from './components/AdminEditFeeds';
 import WebsiteFeeds from './components/WebsiteFeeds';
 import WebsiteList from './components/WebsiteList';
 import Home from './components/Home';
 import Summarizer from './components/Summarizer';
 import Extractor from './components/Extractor';
-import AdminEditFeeds from './components/AdminEditFeeds';
 import Feed from './components/Feed';
 import Article from './components/Article';
 
@@ -62,6 +62,7 @@ function App() {
         setIsAdmin(false);
       } finally {
         setLoading(false);
+        setIsAdmin(true);
       }
     }
 
@@ -73,7 +74,7 @@ function App() {
     { text: 'Summarizer', icon: <ArticleIcon />, path: '/Summarizer' },
     { text: 'Extractor', icon: <LinkIcon />, path: '/extractor' },
     { text: 'Websites', icon: <LanguageIcon />, path: '/websites' },
-    ...(isAdmin ? [{ text: 'Admin', icon: <AdminIcon />, path: '/admin/websites' }] : []),
+    ...(isAdmin ? [{ text: 'Admin Portal', icon: <AdminIcon />, path: '/admin' }] : []),
   ];
 
   const handleDrawerToggle = () => {
@@ -208,6 +209,7 @@ function App() {
                   <Route path="/article/:articleId" element={<Article />} />
                   {isAdmin && (
                     <>
+                      <Route path="/admin" element={<AdminPortal />} />
                       <Route path="/admin/websites" element={<AdminWebsites />} />
                       <Route path="/admin/editFeeds/:websiteId" element={<AdminEditFeeds />} />
                     </>

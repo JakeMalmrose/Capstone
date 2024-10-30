@@ -1,8 +1,8 @@
 import { Amplify } from '@aws-amplify/core';
 import { generateClient } from "@aws-amplify/api";
 import type { Schema } from "../data/resource";
-import cloudOutputs from "./cloudOutputs.json";
-import localOutputs from "./localOutputs.json";
+import cloudOutputs from "./cloudoutputs.json";
+import localOutputs from "./localoutputs.json";
 
 const outputs = process.env.NODE_ENV === 'production' ? cloudOutputs : localOutputs;
 

@@ -17,13 +17,13 @@ import {
   CardActions,
   Grid2,
   Divider,
-  Link,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
+import { Link } from 'react-router-dom';
 import type { Schema } from '../../amplify/data/resource';
 
 interface Website {
@@ -197,13 +197,12 @@ function AdminWebsites() {
               <CardActions sx={{ justifyContent: 'space-between', px: 2, py: 1 }}>
                 <Button
                   component={Link}
-                  href={`/admin/editFeeds/${website.id}`}
+                  to={`/admin/editFeeds/${website.id}`}
                   //startIcon={<RssFeedIcon />}
-                  size="small"
                   sx={{ 
                     color: 'primary.main',
                     '&:hover': {
-                      backgroundColor: 'rgba(224, 194, 255, 0.08)',
+                      backgroundColor: 'primary.dark',
                     }
                   }}
                 >

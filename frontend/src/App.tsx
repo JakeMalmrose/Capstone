@@ -23,7 +23,6 @@ import {
   Menu as MenuIcon,
   Home as HomeIcon,
   Article as ArticleIcon,
-  Link as LinkIcon,
   Language as LanguageIcon,
   AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
@@ -72,7 +71,7 @@ function App() {
   const navigationItems = [
     { text: 'Home', icon: <HomeIcon />, path: '/' },
     { text: 'Summarizer', icon: <ArticleIcon />, path: '/Summarizer' },
-    { text: 'Extractor', icon: <LinkIcon />, path: '/extractor' },
+    //{ text: 'Extractor', icon: <LinkIcon />, path: '/extractor' }, // don't need this as it's just a showcase
     { text: 'Websites', icon: <LanguageIcon />, path: '/websites' },
     ...(isAdmin ? [{ text: 'Admin Portal', icon: <AdminIcon />, path: '/admin' }] : []),
   ];

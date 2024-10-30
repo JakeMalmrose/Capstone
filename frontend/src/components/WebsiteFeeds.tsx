@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/api';
-import { fetchAuthSession, JWT } from 'aws-amplify/auth';
+//import { fetchAuthSession, JWT } from 'aws-amplify/auth';
 import {
   Typography,
   Box,
@@ -12,9 +12,9 @@ import {
   CircularProgress,
   Alert,
   Chip,
-  Divider,
+  //Divider,
   Stack,
-  Link,
+  //Link,
   Paper,
 } from '@mui/material';
 import type { Schema } from '../../amplify/data/resource';

@@ -28,11 +28,11 @@ function WebsiteFeeds() {
   const [feeds, setFeeds] = useState<Schema['Feed']['type'][]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState<{
-    type: 'success' | 'error',
-    message: string
-  } | null>(null);
+  // const [isSubmitting, setIsSubmitting] = useState(false);
+  // const [submitMessage, setSubmitMessage] = useState<{
+  //   type: 'success' | 'error',
+  //   message: string
+  // } | null>(null);
 
   useEffect(() => {
     async function fetchWebsiteAndFeeds() {
@@ -57,31 +57,31 @@ function WebsiteFeeds() {
     fetchWebsiteAndFeeds();
   }, [websiteId]);
 
-  const writeRssToDB = async () => {
-    //this function was largely to test writing to db
-    if (!website) return;
-    setIsSubmitting(true);
-    setSubmitMessage(null);
+  // const writeRssToDB = async () => {
+  //   //this function was largely to test writing to db
+  //   if (!website) return;
+  //   setIsSubmitting(true);
+  //   setSubmitMessage(null);
     
-    try {
-      const result = await client.mutations.rssToDB({ 
-        websiteId: website.id, 
-        feedUrl: website.url 
-      });
+  //   try {
+  //     const result = await client.mutations.rssToDB({ 
+  //       websiteId: website.id, 
+  //       feedUrl: website.url 
+  //     });
       
-      setSubmitMessage({
-        type: 'success',
-        message: result.data?.message || "RSS written to DB successfully"
-      });
-    } catch (err) {
-      setSubmitMessage({
-        type: 'error',
-        message: (err instanceof Error ? err.message : "Unknown error") || "Error writing RSS to DB"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  //     setSubmitMessage({
+  //       type: 'success',
+  //       message: result.data?.message || "RSS written to DB successfully"
+  //     });
+  //   } catch (err) {
+  //     setSubmitMessage({
+  //       type: 'error',
+  //       message: (err instanceof Error ? err.message : "Unknown error") || "Error writing RSS to DB"
+  //     });
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   if (loading) {
     return (

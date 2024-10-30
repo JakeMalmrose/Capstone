@@ -157,7 +157,7 @@ const schema = a.schema({
       name: a.string().required(),
       url: a.string().required(),
       description: a.string(),
-      type: a.enum(["RSS", "OTHER"]),
+      type: a.enum(["GNEWS", "RSS", "OTHER"]),
       tags: a.string().array(),
       websiteId: a.id().required(),
       website: a.belongsTo("Website", "websiteId"),

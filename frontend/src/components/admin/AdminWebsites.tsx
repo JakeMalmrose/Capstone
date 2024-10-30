@@ -24,7 +24,7 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
-import type { Schema } from '../../amplify/data/resource';
+import type { Schema } from '../../../amplify/data/resource';
 
 interface Website {
   id: string;

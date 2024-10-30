@@ -25,7 +25,7 @@ import {
   Delete as DeleteIcon,
   ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
-import type { Schema } from '../../amplify/data/resource';
+import type { Schema } from '../../../amplify/data/resource';
 
 type ModelType = {
   readonly id: string;
@@ -46,7 +46,7 @@ interface FormData {
   name: string;
   url: string;
   description: string;
-  type: 'RSS' | 'OTHER';
+  type: 'GNEWS' | 'RSS' | 'OTHER';
   tags: string;
 }
 

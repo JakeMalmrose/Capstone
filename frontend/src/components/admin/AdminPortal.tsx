@@ -11,7 +11,7 @@ import {
   Grid2,
   Button,
 } from '@mui/material';
-import type { Schema } from '../../amplify/data/resource';
+import type { Schema } from '../../../amplify/data/resource';
 
 interface AdminStats {
   totalWebsites: number;
@@ -129,6 +129,20 @@ function AdminPortal() {
           }}
         >
           Manage Websites
+        </Button>
+        <Button
+          component={Link}
+          to="/admin/editSummarizers"
+          variant="contained"
+          //startIcon={<WebsiteManager />}
+          sx={{ 
+            backgroundColor: 'primary.main',
+            '&:hover': {
+              backgroundColor: 'primary.dark',
+            }
+          }}
+        >
+          Manage Summarizers
         </Button>
       </Box>
 

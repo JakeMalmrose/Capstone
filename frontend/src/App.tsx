@@ -30,9 +30,10 @@ import { ThemeProvider } from '@mui/material/styles';
 import { theme } from './Theme';
 import { fetchAuthSession } from 'aws-amplify/auth';
 //components
-import AdminPortal from './components/AdminPortal';
-import AdminWebsites from './components/AdminWebsites';
-import AdminEditFeeds from './components/AdminEditFeeds';
+import AdminPortal from './components/admin/AdminPortal';
+import AdminWebsites from './components/admin/AdminWebsites';
+import AdminEditFeeds from './components/admin/AdminEditFeeds';
+import AdminEditSummarizers from './components/admin/AdminEditSummarizers';
 import WebsiteFeeds from './components/WebsiteFeeds';
 import WebsiteList from './components/WebsiteList';
 import Home from './components/Home';
@@ -211,6 +212,7 @@ function App() {
                       <Route path="/admin" element={<AdminPortal />} />
                       <Route path="/admin/websites" element={<AdminWebsites />} />
                       <Route path="/admin/editFeeds/:websiteId" element={<AdminEditFeeds />} />
+                      <Route path="/admin/editSummarizers" element={<AdminEditSummarizers />} />
                     </>
                   )}
                 </Routes>

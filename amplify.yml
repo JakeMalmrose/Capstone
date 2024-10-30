@@ -3,10 +3,19 @@ applications:
   - appRoot: frontend
     backend:
       phases:
+        preBuild:
+          commands:
+            - npm install -g @aws-amplify/cli-extensibility
+            - npm install -g @aws-amplify/cli
         build:
           commands:
             - npm ci --cache .npm --prefer-offline
+            - npm install -g @aws-amplify/cli-extensibility  # Ensure it's installed globally
             - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+      cache:
+        paths:
+          - .npm/**/*
+          - node_modules/**/*
     frontend:
       phases:
         preBuild:

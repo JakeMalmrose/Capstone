@@ -3,10 +3,15 @@ import { generateClient } from "@aws-amplify/api";
 import type { Schema } from "../data/resource";
 import cloudOutputs from "./cloudOutputs2.json";
 import localOutputs from "./localOutputs2.json";
+import { secret } from "@aws-amplify/backend";
 
-const outputs = process.env.WEINPROD2 === 'yes' ? cloudOutputs : localOutputs;
+const weinprod = secret('isprod');
 
-Amplify.configure(outputs);
+if (weinprod) {
+  Amplify.configure(cloudOutputs);
+} else {
+  Amplify.configure(localOutputs);
+}
 
 const client = generateClient<Schema>({
     authMode: 'apiKey'

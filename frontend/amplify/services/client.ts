@@ -3,14 +3,13 @@ import { generateClient } from "@aws-amplify/api";
 import type { Schema } from "../data/resource";
 import cloudOutputs from "./cloudOutputs2.json";
 import localOutputs from "./localOutputs2.json";
-import { secret } from "@aws-amplify/backend";
 
-const weinprod = secret('isprod');
+const isLocal = process.env.IS_LOCAL;
 
-if (weinprod) {
-  Amplify.configure(cloudOutputs);
-} else {
+if (isLocal === "true") {
   Amplify.configure(localOutputs);
+} else {
+  Amplify.configure(cloudOutputs);
 }
 
 const client = generateClient<Schema>({

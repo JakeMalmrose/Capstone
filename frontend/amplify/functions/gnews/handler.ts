@@ -1,4 +1,3 @@
-// functions/gnews/handler.ts
 import axios from 'axios';
 import type { Schema } from "../../data/resource";
 import { generateClient } from "@aws-amplify/api";
@@ -8,17 +7,20 @@ import client from '../../services/client';
 type Nullable<T> = T | null;
 
 export const handler: Schema["fetchGNews"]["functionHandler"] = async (event) => {
-  const { websiteId, feedId, country, category } = event.arguments;
+  const { websiteId, feedId } = event.arguments;
 
   if (!websiteId || !feedId) {
     throw new Error('websiteId and feedId are required');
   }
 
-  // Convert nullable strings to undefined if null
-  const sanitizedCountry = country ?? undefined;
-  const sanitizedCategory = category ?? undefined;
+  // Fetch the feed to get its GNews parameters
+  const feed = await client.models.Feed.get({ id: feedId });
+  
+  if (!feed.data) {
+    throw new Error(`Feed with ID ${feedId} not found`);
+  }
 
-  return fetchGNewsArticles(websiteId, feedId, sanitizedCountry, sanitizedCategory);
+  return fetchGNewsArticles(websiteId, feedId, feed.data);
 };
 
 type GNewsArticle = {
@@ -39,11 +41,16 @@ type GNewsResponse = {
   articles: GNewsArticle[];
 };
 
+type FeedData = {
+  gNewsCategory?: string | null;
+  gNewsCountry?: string | null;
+  searchTerms?: string | null;
+};
+
 const fetchGNewsArticles = async function(
   websiteId: string,
   feedId: string,
-  country?: string,
-  category?: string,
+  feed: FeedData,
 ) {
   try {
     const apiKey = process.env.GNEWS_API_KEY;
@@ -58,8 +65,10 @@ const fetchGNewsArticles = async function(
       lang: 'en'
     };
 
-    if (country) queryParams.country = country;
-    if (category) queryParams.category = category;
+    // Add parameters from feed if they exist
+    if (feed.gNewsCountry) queryParams.country = feed.gNewsCountry;
+    if (feed.gNewsCategory) queryParams.category = feed.gNewsCategory;
+    if (feed.searchTerms) queryParams.q = feed.searchTerms;
 
     const params = new URLSearchParams(queryParams);
 
@@ -71,8 +80,6 @@ const fetchGNewsArticles = async function(
 
     const data = response.data as GNewsResponse;
 
-    
-
     // Process articles
     const articles = data.articles.map((article) => ({
       feedId,
@@ -80,7 +87,12 @@ const fetchGNewsArticles = async function(
       title: article.title,
       fullText: article.content,
       createdAt: new Date(article.publishedAt).toISOString(),
-      tags: [category || 'general', country || 'international']
+      // Use feed parameters for tags
+      tags: [
+        feed.gNewsCategory || 'general',
+        feed.gNewsCountry || 'us',
+        ...(feed.searchTerms ? ['search:' + feed.searchTerms] : [])
+      ]
     }));
 
     // Store articles in the database using Promise.all

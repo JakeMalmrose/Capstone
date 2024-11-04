@@ -106,8 +106,6 @@ const schema = a.schema({
   fetchGNews: a
     .mutation()
     .arguments({
-      country: a.string(),
-      category: a.string(),
       websiteId: a.string().required(),
       feedId: a.string().required(),
     })
@@ -162,6 +160,9 @@ const schema = a.schema({
       websiteId: a.id().required(),
       website: a.belongsTo("Website", "websiteId"),
       articles: a.hasMany("Article", "feedId"),
+      gNewsCategory: gNewsCategoryEnum,
+      gNewsCountry: gNewsCountryEnum,
+      searchTerms: a.string(),
     })
     .authorization((allow) => [
       allow.owner(), 

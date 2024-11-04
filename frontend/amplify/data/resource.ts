@@ -1,4 +1,4 @@
-// resource.ts
+//amplify/data/resource.ts
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { sayHello } from "../functions/say-hello/resource";
 import { summarize } from "../functions/summarize/resource";

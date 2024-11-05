@@ -4,7 +4,7 @@ import type { Schema } from "../data/resource";
 import cloudOutputs from "./cloudOutputs2.json";
 import localOutputs from "../../amplify_outputs.json";
 
-const isLocal = true;
+const isLocal = false;
 
 if (isLocal) {
   Amplify.configure(localOutputs);

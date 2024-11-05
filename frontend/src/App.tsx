@@ -41,6 +41,7 @@ import Summarizer from './components/Summarizer';
 import Extractor from './components/Extractor';
 import Feed from './components/Feed';
 import Article from './components/Article';
+import MyFeeds from './components/MyFeeds';
 
 const DRAWER_WIDTH = 240;
 
@@ -71,7 +72,7 @@ function App() {
 
   const navigationItems = [
     { text: 'Home', icon: <HomeIcon />, path: '/' },
-    { text: 'Summarizer', icon: <ArticleIcon />, path: '/Summarizer' },
+    { text: 'My feeds', icon: <ArticleIcon />, path: '/MyFeeds' },
     //{ text: 'Extractor', icon: <LinkIcon />, path: '/extractor' }, // don't need this as it's just a showcase
     { text: 'Websites', icon: <LanguageIcon />, path: '/websites' },
     ...(isAdmin ? [{ text: 'Admin Portal', icon: <AdminIcon />, path: '/admin' }] : []),
@@ -202,6 +203,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/Summarizer" element={<Summarizer />} />
+                  <Route path="/MyFeeds" element={<MyFeeds />} />
                   <Route path="/extractor" element={<Extractor />} />
                   <Route path="/websites" element={<WebsiteList />} />
                   <Route path="/website/:websiteId" element={<WebsiteFeeds />} />

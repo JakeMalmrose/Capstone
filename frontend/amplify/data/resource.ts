@@ -1,4 +1,3 @@
-//amplify/data/resource.ts
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { sayHello } from "../functions/say-hello/resource";
 import { summarize } from "../functions/summarize/resource";
@@ -6,6 +5,7 @@ import { extractUrls } from "../functions/extract-urls/resource";
 import { processRssFeed } from "../functions/rss-parser/resource";
 import { rssToDB } from "../functions/write-rss-to-db/resource";
 import { fetchGNews } from "../functions/gnews/resource";
+import { chatWithLLM } from "../functions/chat-llm/resource";
 
 const feedDataType = a.customType({
   name: a.string(),
@@ -15,13 +15,6 @@ const feedDataType = a.customType({
   websiteId: a.id(),
 });
 
-// const articleDataType = a.customType({
-//   url: a.string(),
-//   title: a.string(),
-//   fullText: a.string(),
-//   createdAt: a.string(),
-// });
-
 const processRssFeedReturnType = a.customType({
   success: a.boolean(),
   feedData: feedDataType,
@@ -29,7 +22,16 @@ const processRssFeedReturnType = a.customType({
   message: a.string(),
 });
 
-
+const chatResponseType = a.customType({
+  response: a.string(),
+  feedSuggestion:
+    a.customType({
+      name: a.string(),
+      url: a.string(),
+      description: a.string(),
+      type: a.enum(["RSS", "GNEWS", "OTHER"]),
+    }),
+});
 
 const gNewsCategoryEnum = a.enum([
   "general", "world", "nation", "business", "technology", 
@@ -40,12 +42,18 @@ const gNewsCountryEnum = a.enum([
   "us", "gb", "au", "ca", "in"
 ]);
 
-
-
-
-
 const schema = a.schema({
   // Functions
+  chatWithLLM: a
+    .query()
+    .arguments({
+      message: a.string(),
+      chatHistory: a.json(),
+    })
+    .returns(chatResponseType)
+    .authorization((allow) => [allow.authenticated()])
+    .handler(a.handler.function(chatWithLLM)),
+
   sayHello: a
     .query()
     .arguments({
@@ -133,7 +141,24 @@ const schema = a.schema({
   .authorization((allow) => [
     allow.owner(),
     allow.authenticated().to(["read"]),
+    allow.publicApiKey(),
   ]),
+
+  UserFeedSubscription: a
+    .model({
+      userId: a.string().required(),
+      feedId: a.id().required(),
+      feed: a.belongsTo("Feed", "feedId"),
+      subscriptionDate: a.datetime(),
+      notificationsEnabled: a.boolean(),
+      customName: a.string(),
+      lastReadDate: a.datetime(),
+    })
+    .authorization((allow) => [
+      allow.owner(),
+      allow.authenticated().to(["read"]),
+      allow.publicApiKey(),
+    ]),
 
   Website: a
     .model({
@@ -160,6 +185,7 @@ const schema = a.schema({
       websiteId: a.id().required(),
       website: a.belongsTo("Website", "websiteId"),
       articles: a.hasMany("Article", "feedId"),
+      subscribers: a.hasMany("UserFeedSubscription", "feedId"),
       gNewsCategory: gNewsCategoryEnum,
       gNewsCountry: gNewsCountryEnum,
       searchTerms: a.string(),
@@ -214,17 +240,6 @@ const schema = a.schema({
       allow.groups(["Admin"]),
       allow.publicApiKey(),
     ]),
-
-    // UserFeedFavorites: a
-    // .model({
-    //   userId: a.id().required(),
-    //   feedId: a.id().required(),
-    //   user: a.belongsTo("User", "userId"),
-    //   feed: a.belongsTo("Feed", "feedId"),
-    // })
-    // .authorization((allow) => [allow.owner()]),
-
-    // Custom Types
 });
 
 export type Schema = ClientSchema<typeof schema>;

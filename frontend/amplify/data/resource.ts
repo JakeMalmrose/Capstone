@@ -22,16 +22,6 @@ const processRssFeedReturnType = a.customType({
   message: a.string(),
 });
 
-const chatResponseType = a.customType({
-  response: a.string(),
-  feedSuggestion:
-    a.customType({
-      name: a.string(),
-      url: a.string(),
-      description: a.string(),
-      type: a.enum(["RSS", "GNEWS", "OTHER"]),
-    }),
-});
 
 const gNewsCategoryEnum = a.enum([
   "general", "world", "nation", "business", "technology", 
@@ -42,6 +32,20 @@ const gNewsCountryEnum = a.enum([
   "us", "gb", "au", "ca", "in"
 ]);
 
+const chatResponseType = a.customType({
+  response: a.string(),
+  feedSuggestion:
+    a.customType({
+      name: a.string(),
+      url: a.string(),
+      description: a.string(),
+      type: a.enum(["RSS", "GNEWS", "OTHER"]),
+      gNewsCategory: gNewsCategoryEnum,
+      gNewsCountry: gNewsCountryEnum,
+      searchTerms: a.string().array(),
+      tags: a.string().array(),
+    }),
+});
 const schema = a.schema({
   // Functions
   chatWithLLM: a

@@ -1,4 +1,3 @@
-// amplify/functions/chat-llm/handler.ts
 import type { Schema } from "../../data/resource";
 import { OpenAIClient } from '../../services/llmClients/OpenAIClient';
 import { LLMMessage } from '../../services/llmClients/LLMClient';
@@ -6,45 +5,82 @@ import client from '../../services/client';
 
 const llmClient = new OpenAIClient(process.env.OPENAI_API_KEY || '');
 
-const SYSTEM_PROMPT = `You are a helpful assistant that helps users discover and subscribe to GNews feeds. 
-When a user expresses interest in a topic, suggest relevant feeds. When suggesting a feed, format your response in two parts:
+const SYSTEM_PROMPT = `You are a helpful assistant that specializes in helping users discover relevant GNews feeds based on their interests. You understand the GNews API's capabilities and limitations.
 
-1. A conversational response explaining why you're suggesting this feed
+Available GNews Categories:
+- general
+- world
+- nation
+- business
+- technology
+- entertainment
+- sports
+- science
+- health
+
+When users express interest in a topic or ask a question, you should:
+1. Determine if a feed suggestion is appropriate for the request
+2. If appropriate, suggest the most relevant GNews category and any search keywords that would help narrow down the results
+3. Only include a FEED_SUGGESTION if you are actually suggesting a feed
+
+Key Behaviors:
+- Only provide a FEED_SUGGESTION when actually suggesting a feed
+- Never generate fake RSS feeds - only work with GNews categories and search queries
+- If the user's request doesn't warrant a feed suggestion, respond conversationally without including a FEED_SUGGESTION
+- When suggesting feeds, ensure they match GNews's available categories
+
+Feed Suggestion Format:
+When suggesting a feed, format your response in two parts:
+1. A conversational response explaining your suggestion
 2. A feed suggestion in JSON format after the text "FEED_SUGGESTION:" with these properties:
    {
-     "name": "Feed name",
-     "url": "Feed URL",
-     "description": "A brief description of the feed",
-     "type": "RSS" or "GNEWS"
+     "name": "A descriptive name for the feed",
+     "url": "gnews://[category]?q=[search terms]",
+     "description": "A brief description of what the feed contains",
+     "type": "GNEWS"
    }
 
+Examples:
+
 <example>
-I found a great technology news feed that covers the latest developments in AI and machine learning.
+User: I'm interested in learning about artificial intelligence.
+
+That's a fascinating topic! I can help you stay updated on AI news through GNews's technology category with a specific focus on artificial intelligence.
 
 FEED_SUGGESTION:
 {
-  "name": "AI Weekly",
-  "url": "https://aiweekly.com/feed",
-  "description": "Weekly curated news about artificial intelligence and machine learning",
-  "type": "RSS"
+  "name": "AI Technology News",
+  "url": "gnews://technology?q=artificial intelligence",
+  "description": "Latest news about artificial intelligence from GNews's technology section",
+  "type": "GNEWS"
 }
 </example>
-Example 2:
+
 <example>
-Let's get a little more specific. Would you like to receive news about a particular topic?
+User: What categories are available?
+
+I'd be happy to explain the different categories available in GNews. You can browse news from these categories: general, world, nation, business, technology, entertainment, sports, science, and health. Which area interests you most?
 </example>
 
-Example 3:
-I found a great cybersecurity news feed that covers the latest developments in cybersecurity.
+<example>
+User: I want business news focused on renewable energy.
+
+I'll set you up with a business feed focused specifically on renewable energy developments.
+
+FEED_SUGGESTION:
 {
-  "name": "Cybersecurity News",
-  "url": "https://cybersecuritynews.com/feed",
-  "description": "Daily news about cybersecurity",
-  "type": "RSS"
+  "name": "Renewable Energy Business News",
+  "url": "gnews://business?q=renewable energy",
+  "description": "Business news and updates about renewable energy industry",
+  "type": "GNEWS"
 }
-`;
+</example>
 
+<example>
+User: How do I use this service?
 
+I'm here to help you discover news feeds that match your interests. Just let me know what topics you'd like to follow, and I can suggest appropriate GNews feeds. You can specify particular subjects, industries, or general categories like technology, business, sports, etc. What kind of news interests you?
+</example>`;
 
 export const handler: Schema["chatWithLLM"]["functionHandler"] = async (event) => {
   const { message, chatHistory } = event.arguments;
@@ -78,29 +114,43 @@ export const handler: Schema["chatWithLLM"]["functionHandler"] = async (event) =
     });
 
     // Parse response to extract feed suggestion if present
-    let feedSuggestion = null;
-    let textResponse = response;
-
-    if (response.includes('FEED_SUGGESTION:')) {
-      const [text, feedJson] = response.split('FEED_SUGGESTION:');
-      textResponse = text.trim();
+    const parts = response.split('FEED_SUGGESTION:');
+    const textResponse = parts[0].trim();
+    
+    // Only try to parse feed suggestion if it exists
+    if (parts.length > 1) {
       try {
-        feedSuggestion = JSON.parse(feedJson.trim());
+        const feedJson = parts[1].trim();
+        const feedSuggestion = JSON.parse(feedJson);
 
-        // If a URL is provided, validate it and check for RSS feeds
-        if (feedSuggestion.url) {
+        // Validate the feed suggestion has the required properties
+        if (feedSuggestion.url && feedSuggestion.name && feedSuggestion.description) {
+          // For GNews URLs, return as is
+          if (feedSuggestion.url.startsWith('gnews://')) {
+            return {
+              response: textResponse,
+              feedSuggestion: {
+                ...feedSuggestion,
+                type: 'GNEWS'
+              }
+            };
+          }
+
+          // For other URLs, check for RSS feeds
           const urlsResponse = await client.queries.extractUrls({
             url: feedSuggestion.url,
             typeOfLink: 'RSS'
           });
 
-          // If RSS feeds were found, update the suggestion with the first feed URL
           if (urlsResponse.data && urlsResponse.data.length > 0) {
-            feedSuggestion.url = urlsResponse.data[0];
-            feedSuggestion.type = 'RSS';
-          } else {
-            // If no RSS feed found, mark as OTHER type
-            feedSuggestion.type = 'OTHER';
+            return {
+              response: textResponse,
+              feedSuggestion: {
+                ...feedSuggestion,
+                url: urlsResponse.data[0],
+                type: 'RSS'
+              }
+            };
           }
         }
       } catch (error: any) {
@@ -113,14 +163,11 @@ export const handler: Schema["chatWithLLM"]["functionHandler"] = async (event) =
       }
     }
 
+    // If we reach here, either there was no feed suggestion or parsing failed
+    // In this case, we return just the text response without a feed suggestion
     return {
       response: textResponse,
-      feedSuggestion: feedSuggestion || {
-        name: '',
-        url: '',
-        description: '',
-        type: 'OTHER'
-      }
+      feedSuggestion: null
     };
   } catch (error: any) {
     console.error("Detailed error during chat:", {

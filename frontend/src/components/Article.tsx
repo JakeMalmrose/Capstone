@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/api';
+import { useAuthenticator } from '@aws-amplify/ui-react';
 import { 
   Card, 
   Heading, 
@@ -24,6 +25,7 @@ interface SummaryState {
 
 function Article() {
   const { articleId } = useParams<{ articleId: string }>();
+  const { user } = useAuthenticator();
   const [article, setArticle] = useState<Schema['Article']['type'] | null>(null);
   const [summarizers, setSummarizers] = useState<Schema['Summarizer']['type'][]>([]);
   const [selectedSummarizerId, setSelectedSummarizerId] = useState<string>('');
@@ -35,40 +37,48 @@ function Article() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch article and summarizers on component mount
+  // Fetch article, summarizers, and user preferences on component mount
   useEffect(() => {
     async function fetchData() {
       if (!articleId) return;
 
       setLoading(true);
       try {
-        const [articleResponse, summarizersResponse] = await Promise.all([
+        const [articleResponse, summarizersResponse, preferencesResponse] = await Promise.all([
           client.models.Article.get({ id: articleId }),
-          client.models.Summarizer.list()
+          client.models.Summarizer.list(),
+          client.models.UserPreferences.list({
+            filter: {
+              userId: {
+                eq: user.username
+              }
+            }
+          })
         ]);
 
         setArticle(articleResponse.data);
         setSummarizers(summarizersResponse.data);
         
-        // Select first summarizer by default if available
-        if (summarizersResponse.data.length > 0) {
-          setSelectedSummarizerId(summarizersResponse.data[0].id);
-        }
+        // Only set the selectedSummarizerId after all data is loaded
+        const userPreference = preferencesResponse.data[0]?.defaultSummarizerId;
+        const defaultSummarizer = summarizersResponse.data[0]?.id;
+        setSelectedSummarizerId(userPreference || defaultSummarizer || '');
+        
+        setLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Failed to load article or summarizers. Please try again later.');
-      } finally {
         setLoading(false);
       }
     }
 
     fetchData();
-  }, [articleId]);
+  }, [articleId, user.username]);
 
-  // Fetch or generate summary when summarizer is selected
+  // Fetch or generate summary when summarizer is selected and not loading
   useEffect(() => {
     async function fetchSummary() {
-      if (!selectedSummarizerId || !article) return;
+      if (!selectedSummarizerId || !article || loading) return;
 
       setSummaryState(prev => ({ ...prev, loading: true, error: null }));
 
@@ -118,7 +128,7 @@ function Article() {
     }
 
     fetchSummary();
-  }, [selectedSummarizerId, article, articleId]);
+  }, [selectedSummarizerId, article, articleId, loading]);
 
   if (loading) return <Loader />;
   if (error) return <Alert variation="error">{error}</Alert>;

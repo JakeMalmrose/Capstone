@@ -1,4 +1,3 @@
-
 // src/components/Navigation.tsx
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
@@ -29,6 +28,7 @@ const navLinks = [
     { path: '/summarizer', label: 'Summarizer' },
     { path: '/extractor', label: 'Extractor' },
     { path: '/websites', label: 'Websites' },
+    { path: '/preferences', label: 'Preferences' },
     ...(isAdmin ? [{ path: '/admin/websites', label: 'Manage Websites' }] : []),
 ];
 

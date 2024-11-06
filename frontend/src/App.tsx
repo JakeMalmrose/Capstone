@@ -25,6 +25,7 @@ import {
   Article as ArticleIcon,
   Language as LanguageIcon,
   AdminPanelSettings as AdminIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { theme } from './Theme';
@@ -42,6 +43,7 @@ import Extractor from './components/Extractor';
 import Feed from './components/Feed';
 import Article from './components/Article';
 import MyFeeds from './components/MyFeeds';
+import UserPreferences from './components/UserPreferences';
 
 const DRAWER_WIDTH = 240;
 
@@ -75,6 +77,7 @@ function App() {
     { text: 'My feeds', icon: <ArticleIcon />, path: '/MyFeeds' },
     //{ text: 'Extractor', icon: <LinkIcon />, path: '/extractor' }, // don't need this as it's just a showcase
     { text: 'Websites', icon: <LanguageIcon />, path: '/websites' },
+    { text: 'Preferences', icon: <SettingsIcon />, path: '/preferences' },
     ...(isAdmin ? [{ text: 'Admin Portal', icon: <AdminIcon />, path: '/admin' }] : []),
   ];
 
@@ -209,6 +212,7 @@ function App() {
                   <Route path="/website/:websiteId" element={<WebsiteFeeds />} />
                   <Route path="/feed/:feedId" element={<Feed />} />
                   <Route path="/article/:articleId" element={<Article />} />
+                  <Route path="/preferences" element={<UserPreferences />} />
                   {isAdmin && (
                     <>
                       <Route path="/admin" element={<AdminPortal />} />

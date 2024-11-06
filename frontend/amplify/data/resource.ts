@@ -134,6 +134,9 @@ const schema = a.schema({
   UserPreferences: a
   .model({
     userId: a.string().required(),
+    isPremium: a.boolean(),
+    defaultSummarizerId: a.string(),
+    specialRequests: a.string(),
     gNewsCountry: gNewsCountryEnum,
     gNewsCategory: gNewsCategoryEnum,
     lastUpdated: a.datetime(),

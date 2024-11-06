@@ -1,9 +1,7 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
-import { sayHello } from "../functions/say-hello/resource";
 import { summarize } from "../functions/summarize/resource";
 import { extractUrls } from "../functions/extract-urls/resource";
 import { processRssFeed } from "../functions/rss-parser/resource";
-import { rssToDB } from "../functions/write-rss-to-db/resource";
 import { fetchGNews } from "../functions/gnews/resource";
 import { chatWithLLM } from "../functions/chat-llm/resource";
 
@@ -58,15 +56,6 @@ const schema = a.schema({
     .authorization((allow) => [allow.authenticated()])
     .handler(a.handler.function(chatWithLLM)),
 
-  sayHello: a
-    .query()
-    .arguments({
-      name: a.string(),
-    })
-    .returns(a.string())
-    .authorization((allow) => [allow.authenticated()])
-    .handler(a.handler.function(sayHello)),
-
   summarize: a
     .query()
     .arguments({
@@ -103,17 +92,6 @@ const schema = a.schema({
     .authorization((allow) => [allow.authenticated(),
       allow.publicApiKey(),])
     .handler(a.handler.function(processRssFeed)),
-
-  rssToDB: a
-    .mutation()
-    .arguments({
-      feedUrl: a.string(),
-      websiteId: a.string(),
-    })
-    .authorization((allow) => [allow.authenticated(),
-      allow.publicApiKey(),])
-    .returns(a.customType({ success: a.boolean(), message: a.string() }))
-    .handler(a.handler.function(rssToDB)),
 
   fetchGNews: a
     .mutation()

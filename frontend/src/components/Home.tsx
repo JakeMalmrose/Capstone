@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { 
@@ -48,6 +48,7 @@ interface ChatResponse {
 }
 
 function Home() {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([{
     text: "Hello! I can help you discover and subscribe to news feeds. What topics are you interested in?",
     isUser: false
@@ -58,6 +59,14 @@ function Home() {
   const [feedDialog, setFeedDialog] = useState(false);
   const [currentFeed, setCurrentFeed] = useState<FeedSuggestion | null>(null);
   const [isSubscribing, setIsSubscribing] = useState(false);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -237,6 +246,7 @@ function Home() {
                   </Paper>
                 </ListItem>
               ))}
+              <div ref={messagesEndRef} />
             </List>
 
             {/* Message Input */}

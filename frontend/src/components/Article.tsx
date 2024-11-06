@@ -83,11 +83,21 @@ function Article() {
       setSummaryState(prev => ({ ...prev, loading: true, error: null }));
 
       try {
-        // First try to fetch existing summary
+        // First try to fetch user-specific summary if user has preferences
+        const userPreferences = await client.models.UserPreferences.list({
+          filter: {
+            userId: { eq: user.username }
+          }
+        });
+
+        const hasSpecialRequests = userPreferences.data[0]?.specialRequests;
+        
+        // Try to fetch existing summary based on user preferences
         const existingSummaries = await client.models.Summary.list({
           filter: {
             articleId: { eq: articleId },
-            summarizerId: { eq: selectedSummarizerId }
+            summarizerId: { eq: selectedSummarizerId },
+            ...(hasSpecialRequests ? { userId: { eq: user.username } } : { userId: { attributeExists: false } })
           }
         });
 
@@ -102,19 +112,15 @@ function Article() {
 
         // If no existing summary, generate new one
         const result = await client.queries.summarize({
-            text: article.fullText,
-            articleId: article.id,
-            summarizerId: selectedSummarizerId
-          });
-        console.log('Summarize request:', {
-        textLength: article.fullText?.length,
-        articleId: article.id,
-        summarizerId: selectedSummarizerId
+          text: article.fullText,
+          articleId: article.id,
+          summarizerId: selectedSummarizerId,
+          userId: user.username // Add userId to the summarize query
         });
 
         setSummaryState(prev => ({
           ...prev,
-          text: result.data || 'hewwooooo',
+          text: result.data || '',
           loading: false
         }));
       } catch (err) {
@@ -128,7 +134,7 @@ function Article() {
     }
 
     fetchSummary();
-  }, [selectedSummarizerId, article, articleId, loading]);
+  }, [selectedSummarizerId, article, articleId, loading, user.username]);
 
   if (loading) return <Loader />;
   if (error) return <Alert variation="error">{error}</Alert>;

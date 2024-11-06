@@ -34,6 +34,7 @@ import { fetchAuthSession } from 'aws-amplify/auth';
 import AdminPortal from './components/admin/AdminPortal';
 import AdminWebsites from './components/admin/AdminWebsites';
 import AdminEditFeeds from './components/admin/AdminEditFeeds';
+import AdminAllFeeds from './components/admin/AdminAllFeeds';
 import AdminEditSummarizers from './components/admin/AdminEditSummarizers';
 import WebsiteFeeds from './components/WebsiteFeeds';
 import WebsiteList from './components/WebsiteList';
@@ -218,6 +219,7 @@ function App() {
                       <Route path="/admin" element={<AdminPortal />} />
                       <Route path="/admin/websites" element={<AdminWebsites />} />
                       <Route path="/admin/editFeeds/:websiteId" element={<AdminEditFeeds />} />
+                      <Route path="/admin/allFeeds" element={<AdminAllFeeds />} />
                       <Route path="/admin/editSummarizers" element={<AdminEditSummarizers />} />
                     </>
                   )}

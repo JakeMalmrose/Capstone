@@ -60,7 +60,7 @@ interface Website {
 
 const client = generateClient<Schema>();
 
-export default function AdminEditFeeds() {
+function AdminAllFeeds() {
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [websites, setWebsites] = useState<Website[]>([]);
   const [loading, setLoading] = useState(true);
@@ -198,13 +198,13 @@ export default function AdminEditFeeds() {
           Back
         </Button>
         <Typography variant="h2" component="h1">
-          Manage Feeds
+          All Feeds
         </Typography>
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Typography variant="h6" sx={{ mb: 0 }}>
-          All Feeds ({feeds.length})
+          Feeds ({feeds.length})
         </Typography>
         <Button
           variant="contained"
@@ -352,3 +352,5 @@ export default function AdminEditFeeds() {
     </Box>
   );
 }
+
+export default AdminAllFeeds;

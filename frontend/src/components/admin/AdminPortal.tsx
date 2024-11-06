@@ -116,34 +116,47 @@ function AdminPortal() {
         <Typography variant="h2" component="h1">
           Admin Dashboard
         </Typography>
-        <Button
-          component={Link}
-          to="/admin/websites"
-          variant="contained"
-          //startIcon={<WebsiteManager />}
-          sx={{ 
-            backgroundColor: 'primary.main',
-            '&:hover': {
-              backgroundColor: 'primary.dark',
-            }
-          }}
-        >
-          Manage Websites
-        </Button>
-        <Button
-          component={Link}
-          to="/admin/editSummarizers"
-          variant="contained"
-          //startIcon={<WebsiteManager />}
-          sx={{ 
-            backgroundColor: 'primary.main',
-            '&:hover': {
-              backgroundColor: 'primary.dark',
-            }
-          }}
-        >
-          Manage Summarizers
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            component={Link}
+            to="/admin/websites"
+            variant="contained"
+            sx={{ 
+              backgroundColor: 'primary.main',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              }
+            }}
+          >
+            Manage Websites
+          </Button>
+          <Button
+            component={Link}
+            to="/admin/allFeeds"
+            variant="contained"
+            sx={{ 
+              backgroundColor: 'primary.main',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              }
+            }}
+          >
+            Manage Feeds
+          </Button>
+          <Button
+            component={Link}
+            to="/admin/editSummarizers"
+            variant="contained"
+            sx={{ 
+              backgroundColor: 'primary.main',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              }
+            }}
+          >
+            Manage Summarizers
+          </Button>
+        </Box>
       </Box>
 
       <Box sx={{ mt: 4 }}>

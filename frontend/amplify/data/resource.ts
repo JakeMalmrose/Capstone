@@ -62,6 +62,7 @@ const schema = a.schema({
       text: a.string(),
       articleId: a.string(),
       summarizerId: a.string(),
+      userId: a.string(), // Add userId parameter
     })
     .returns(a.string())
     .authorization((allow) => [
@@ -207,6 +208,7 @@ const schema = a.schema({
       summarizer: a.belongsTo("Summarizer", "summarizerId"),
       articleId: a.id(),
       article: a.belongsTo("Article", "articleId"),
+      userId: a.string(),  // Added userId field to support user-specific summaries
     })
     .authorization((allow) => [allow.owner(),
       allow.publicApiKey(), allow.authenticated().to(["read"])]),

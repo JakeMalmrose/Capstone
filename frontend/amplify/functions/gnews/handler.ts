@@ -54,7 +54,8 @@ const fetchGNewsArticles = async function(
 ) {
   try {
     const apiKey = process.env.GNEWS_API_KEY;
-    const baseUrl = "https://gnews.io/api/v4/top-headlines";
+    // Use search endpoint instead of top-headlines for better search and category support
+    const baseUrl = "https://gnews.io/api/v4/search";
     if (!apiKey) {
       throw new Error('GNEWS_API_KEY is not set');
     }
@@ -68,12 +69,19 @@ const fetchGNewsArticles = async function(
     // Add parameters from feed if they exist
     if (feed.gNewsCountry) queryParams.country = feed.gNewsCountry;
     if (feed.gNewsCategory) queryParams.category = feed.gNewsCategory;
+    
     // Join search terms with OR operator if they exist, filtering out null values
     if (feed.searchTerms && feed.searchTerms.length > 0) {
       const validSearchTerms = feed.searchTerms.filter((term): term is string => term !== null);
       if (validSearchTerms.length > 0) {
         queryParams.q = validSearchTerms.join(' OR ');
       }
+    } else if (feed.gNewsCategory) {
+      // If no search terms but category exists, use category as a general search term
+      queryParams.q = feed.gNewsCategory;
+    } else {
+      // Default search if no terms or category specified
+      queryParams.q = 'news';
     }
 
     const params = new URLSearchParams(queryParams);

@@ -11,7 +11,8 @@ import {
   SelectField,
   Alert,
   Flex,
-  Divider
+  Divider,
+  Button
 } from '@aws-amplify/ui-react';
 import type { Schema } from '../../amplify/data/resource';
 
@@ -29,6 +30,7 @@ function Article() {
   const [article, setArticle] = useState<Schema['Article']['type'] | null>(null);
   const [summarizers, setSummarizers] = useState<Schema['Summarizer']['type'][]>([]);
   const [selectedSummarizerId, setSelectedSummarizerId] = useState<string>('');
+  const [showFullText, setShowFullText] = useState(false);
   const [summaryState, setSummaryState] = useState<SummaryState>({
     text: '',
     loading: false,
@@ -115,7 +117,7 @@ function Article() {
           text: article.fullText,
           articleId: article.id,
           summarizerId: selectedSummarizerId,
-          userId: user.username // Add userId to the summarize query
+          userId: user.username
         });
 
         setSummaryState(prev => ({
@@ -140,6 +142,17 @@ function Article() {
   if (error) return <Alert variation="error">{error}</Alert>;
   if (!article) return <Text>No article found</Text>;
 
+  if (!article.fullText) {
+    return (
+      <View padding="2rem">
+        <Card>
+          <Text>No text available for this article</Text>
+        </Card>
+      </View>
+    );
+  }
+  const truncatedText = article.fullText.slice(0, 30) + '...';
+
   return (
     <View padding="2rem">
       <Card>
@@ -147,14 +160,10 @@ function Article() {
         <Text variation="tertiary" marginBottom="1rem">
           Published: {article.createdAt ? new Date(article.createdAt).toLocaleDateString() : 'Unknown'}
         </Text>
-        
-        <Text marginBottom="2rem">{article.fullText}</Text>
-        
-        <Divider marginBottom="2rem" />
-        
+
+        {/* Summary Section */}
         <Heading level={3} marginBottom="1rem">Article Summary</Heading>
-        
-        <Flex direction="column" gap="1rem">
+        <Flex direction="column" gap="1rem" marginBottom="2rem">
           <SelectField
             label="Select Summarizer"
             value={selectedSummarizerId}
@@ -180,6 +189,20 @@ function Article() {
             </Card>
           ) : null}
         </Flex>
+        
+        <Divider marginBottom="2rem" />
+        
+        {/* Article Text Section */}
+        <Heading level={3} marginBottom="1rem">Full Article</Heading>
+        <Text marginBottom="1rem">
+          {showFullText ? article.fullText : truncatedText}
+        </Text>
+        <Button
+          onClick={() => setShowFullText(!showFullText)}
+          marginBottom="1rem"
+        >
+          {showFullText ? 'Show Less' : 'Show More'}
+        </Button>
       </Card>
     </View>
   );

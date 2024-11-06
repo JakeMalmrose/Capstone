@@ -41,7 +41,7 @@ type FeedSuggestion = {
 
 interface ChatResponse {
   response: string;
-  feedSuggestion?: FeedSuggestion;
+  feedSuggestion?: FeedSuggestion | null;
 }
 
 function Home() {
@@ -77,6 +77,7 @@ function Home() {
       });
 
       if (response.data) {
+        console.log('Chat response:', response.data);
         const chatResponse = response.data as ChatResponse;
         
         if (chatResponse.response) {
@@ -86,6 +87,7 @@ function Home() {
           }]);
 
           if (chatResponse.feedSuggestion) {
+            console.log('Feed suggestion:', chatResponse.feedSuggestion);
             setCurrentFeed(chatResponse.feedSuggestion);
             setFeedDialog(true);
           }

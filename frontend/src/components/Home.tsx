@@ -37,6 +37,9 @@ type FeedSuggestion = {
   description: string;
   type: "RSS" | "GNEWS" | "OTHER";
   tags?: string[];
+  gNewsCategory?: string;
+  gNewsCountry?: string;
+  searchTerms?: string[];
 };
 
 interface ChatResponse {
@@ -115,7 +118,7 @@ function Home() {
       // Create website first
       const websiteResponse = await client.models.Website.create({
         name: currentFeed.name,
-        url: new URL(currentFeed.url).origin,
+        url: currentFeed.type === 'GNEWS' ? 'https://gnews.io' : new URL(currentFeed.url).origin,
         category: "news",
         tags: currentFeed.tags
       });
@@ -124,14 +127,17 @@ function Home() {
         throw new Error('Failed to create website');
       }
 
-      // Create feed
+      // Create feed with GNews specific fields if present
       const feedResponse = await client.models.Feed.create({
         name: currentFeed.name,
         url: currentFeed.url,
         description: currentFeed.description,
         type: currentFeed.type,
         websiteId: websiteResponse.data.id,
-        tags: currentFeed.tags
+        tags: currentFeed.tags,
+        gNewsCategory: currentFeed.gNewsCategory as "general" | "world" | "nation" | "business" | "technology" | "entertainment" | "sports" | "science" | "health" | null | undefined,
+        gNewsCountry: currentFeed.gNewsCountry as "us" | "gb" | "au" | "ca" | "in" | null | undefined,
+        searchTerms: currentFeed.searchTerms
       });
 
       if (!feedResponse.data) {
@@ -145,6 +151,11 @@ function Home() {
         subscriptionDate: new Date().toISOString(),
         notificationsEnabled: true
       });
+
+      client.mutations.fetchGNews({
+        websiteId: websiteResponse.data.id,
+        feedId: feedResponse.data.id
+      })
 
       setFeedDialog(false);
       setMessages(prev => [...prev, {
@@ -288,11 +299,8 @@ function Home() {
               <Typography variant="body1" gutterBottom>
                 {currentFeed.description}
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                {currentFeed.url}
-              </Typography>
               {currentFeed.tags && currentFeed.tags.length > 0 && (
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                   {currentFeed.tags.map((tag) => (
                     <Chip 
                       key={tag}
@@ -303,6 +311,31 @@ function Home() {
                       }}
                     />
                   ))}
+                </Box>
+              )}
+              {currentFeed.type === 'GNEWS' && (
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  {currentFeed.gNewsCategory && (
+                    <Chip 
+                      label={`Category: ${currentFeed.gNewsCategory}`}
+                      size="small"
+                      color="primary"
+                    />
+                  )}
+                  {currentFeed.gNewsCountry && (
+                    <Chip 
+                      label={`Country: ${currentFeed.gNewsCountry}`}
+                      size="small"
+                      color="secondary"
+                    />
+                  )}
+                  {currentFeed.searchTerms && currentFeed.searchTerms.length > 0 && (
+                    <Chip 
+                      label={`Search: ${currentFeed.searchTerms.join(', ')}`}
+                      size="small"
+                      color="info"
+                    />
+                  )}
                 </Box>
               )}
             </Box>

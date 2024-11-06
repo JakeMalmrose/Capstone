@@ -18,16 +18,23 @@ Available GNews Categories:
 - science
 - health
 
+Available GNews Countries:
+- us (United States)
+- gb (United Kingdom)
+- au (Australia)
+- ca (Canada)
+- in (India)
+
 When users express interest in a topic or ask a question, you should:
 1. Determine if a feed suggestion is appropriate for the request
-2. If appropriate, suggest the most relevant GNews category and any search keywords that would help narrow down the results
+2. If appropriate, suggest the most relevant GNews category, country (defaulting to 'us'), and any search keywords that would help narrow down the results
 3. Only include a FEED_SUGGESTION if you are actually suggesting a feed
 
 Key Behaviors:
 - Only provide a FEED_SUGGESTION when actually suggesting a feed
 - Never generate fake RSS feeds - only work with GNews categories and search queries
 - If the user's request doesn't warrant a feed suggestion, respond conversationally without including a FEED_SUGGESTION
-- When suggesting feeds, ensure they match GNews's available categories
+- When suggesting feeds, ensure they match GNews's available categories and countries
 
 Feed Suggestion Format:
 When suggesting a feed, format your response in two parts:
@@ -35,9 +42,11 @@ When suggesting a feed, format your response in two parts:
 2. A feed suggestion in JSON format after the text "FEED_SUGGESTION:" with these properties:
    {
      "name": "A descriptive name for the feed",
-     "url": "gnews://[category]?q=[search terms]",
      "description": "A brief description of what the feed contains",
-     "type": "GNEWS"
+     "type": "GNEWS",
+     "gNewsCategory": "one of the available categories",
+     "gNewsCountry": "one of the available country codes",
+     "searchTerms": ["array", "of", "search", "terms"]
    }
 
 Examples:
@@ -50,9 +59,11 @@ That's a fascinating topic! I can help you stay updated on AI news through GNews
 FEED_SUGGESTION:
 {
   "name": "AI Technology News",
-  "url": "gnews://technology?q=artificial intelligence",
   "description": "Latest news about artificial intelligence from GNews's technology section",
-  "type": "GNEWS"
+  "type": "GNEWS",
+  "gNewsCategory": "technology",
+  "gNewsCountry": "us",
+  "searchTerms": ["artificial intelligence", "AI"]
 }
 </example>
 
@@ -70,16 +81,12 @@ I'll set you up with a business feed focused specifically on renewable energy de
 FEED_SUGGESTION:
 {
   "name": "Renewable Energy Business News",
-  "url": "gnews://business?q=renewable energy",
   "description": "Business news and updates about renewable energy industry",
-  "type": "GNEWS"
+  "type": "GNEWS",
+  "gNewsCategory": "business",
+  "gNewsCountry": "us",
+  "searchTerms": ["renewable energy", "clean energy", "sustainable energy"]
 }
-</example>
-
-<example>
-User: How do I use this service?
-
-I'm here to help you discover news feeds that match your interests. Just let me know what topics you'd like to follow, and I can suggest appropriate GNews feeds. You can specify particular subjects, industries, or general categories like technology, business, sports, etc. What kind of news interests you?
 </example>`;
 
 export const handler: Schema["chatWithLLM"]["functionHandler"] = async (event) => {
@@ -124,14 +131,13 @@ export const handler: Schema["chatWithLLM"]["functionHandler"] = async (event) =
         const feedSuggestion = JSON.parse(feedJson);
 
         // Validate the feed suggestion has the required properties
-        if (feedSuggestion.url && feedSuggestion.name && feedSuggestion.description) {
-          // For GNews URLs, return as is
-          if (feedSuggestion.url.startsWith('gnews://')) {
+        if (feedSuggestion.name && feedSuggestion.description) {
+          if (feedSuggestion.type === 'GNEWS') {
             return {
               response: textResponse,
               feedSuggestion: {
                 ...feedSuggestion,
-                type: 'GNEWS'
+                url: 'gnews://' // placeholder URL since we're using direct fields now
               }
             };
           }

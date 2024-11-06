@@ -188,7 +188,7 @@ const schema = a.schema({
       subscribers: a.hasMany("UserFeedSubscription", "feedId"),
       gNewsCategory: gNewsCategoryEnum,
       gNewsCountry: gNewsCountryEnum,
-      searchTerms: a.string(),
+      searchTerms: a.string().array(),
     })
     .authorization((allow) => [
       allow.owner(), 

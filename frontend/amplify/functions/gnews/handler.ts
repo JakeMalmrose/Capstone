@@ -44,7 +44,7 @@ type GNewsResponse = {
 type FeedData = {
   gNewsCategory?: string | null;
   gNewsCountry?: string | null;
-  searchTerms?: string | null;
+  searchTerms?: Nullable<string>[] | null;
 };
 
 const fetchGNewsArticles = async function(
@@ -68,7 +68,13 @@ const fetchGNewsArticles = async function(
     // Add parameters from feed if they exist
     if (feed.gNewsCountry) queryParams.country = feed.gNewsCountry;
     if (feed.gNewsCategory) queryParams.category = feed.gNewsCategory;
-    if (feed.searchTerms) queryParams.q = feed.searchTerms;
+    // Join search terms with OR operator if they exist, filtering out null values
+    if (feed.searchTerms && feed.searchTerms.length > 0) {
+      const validSearchTerms = feed.searchTerms.filter((term): term is string => term !== null);
+      if (validSearchTerms.length > 0) {
+        queryParams.q = validSearchTerms.join(' OR ');
+      }
+    }
 
     const params = new URLSearchParams(queryParams);
 
@@ -87,11 +93,11 @@ const fetchGNewsArticles = async function(
       title: article.title,
       fullText: article.content,
       createdAt: new Date(article.publishedAt).toISOString(),
-      // Use feed parameters for tags
+      // Use feed parameters for tags and add each valid search term as a separate tag
       tags: [
         feed.gNewsCategory || 'general',
         feed.gNewsCountry || 'us',
-        ...(feed.searchTerms ? ['search:' + feed.searchTerms] : [])
+        ...(feed.searchTerms?.filter((term): term is string => term !== null).map(term => 'search:' + term) || [])
       ]
     }));
 

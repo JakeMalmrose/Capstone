@@ -15,7 +15,7 @@ import {
   Alert
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
-import client from '../../amplify/services/client';
+import { generateClient } from 'aws-amplify/api';
 
 interface Summarizer {
   id: string;
@@ -32,6 +32,11 @@ interface UserPreference {
   specialRequests: string | null;
   lastUpdated: string | null;
 }
+
+
+import type { Schema } from '../../amplify/data/resource';
+
+const client = generateClient<Schema>();
 
 export default function UserPreferences() {
   const { user } = useAuthenticator();

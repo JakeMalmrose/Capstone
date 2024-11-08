@@ -39,7 +39,7 @@ export class SummarizationService {
     // Build system prompt with user preferences if they exist
     let systemPrompt = "You are a news article summarizer. Provide a clear, concise one-paragraph summary of the article.";
     if (userPrefs?.specialRequests) {
-      systemPrompt += ` ${userPrefs.specialRequests}`;
+      systemPrompt += `The reader has requested you to respond with the following instructions: <instructions>${userPrefs.specialRequests}</instructions>.`;
     }
     
     try {

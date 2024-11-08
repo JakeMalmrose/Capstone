@@ -51,7 +51,7 @@ export class SummarizationService {
 
       // Create summary in database with userId if special requests exist
       const { data: createdSummary } = await client.models.Summary.create({
-        text: summaryText,
+        text: summaryText + "Here's some debugging info on the summary, user requests: " + userPrefs?.specialRequests,
         articleId: articleId,
         summarizerId: this.summarizerId,
         createdAt: new Date().toISOString(),

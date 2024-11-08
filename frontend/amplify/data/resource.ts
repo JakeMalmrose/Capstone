@@ -20,7 +20,6 @@ const processRssFeedReturnType = a.customType({
   message: a.string(),
 });
 
-
 const gNewsCategoryEnum = a.enum([
   "general", "world", "nation", "business", "technology", 
   "entertainment", "sports", "science", "health"
@@ -44,6 +43,7 @@ const chatResponseType = a.customType({
       tags: a.string().array(),
     }),
 });
+
 const schema = a.schema({
   // Functions
   chatWithLLM: a
@@ -62,7 +62,7 @@ const schema = a.schema({
       text: a.string(),
       articleId: a.string(),
       summarizerId: a.string(),
-      userId: a.string(), // Add userId parameter
+      userId: a.string(),
     })
     .returns(a.string())
     .authorization((allow) => [
@@ -78,8 +78,10 @@ const schema = a.schema({
       typeOfLink: a.enum(["XML", "RSS", "ANY"]),
     })
     .returns(a.string().array())
-    .authorization((allow) => [allow.authenticated(),
-      allow.publicApiKey(),])
+    .authorization((allow) => [
+      allow.authenticated(),
+      allow.publicApiKey(),
+    ])
     .handler(a.handler.function(extractUrls)),
 
   processRssFeed: a
@@ -90,8 +92,10 @@ const schema = a.schema({
       jwt: a.string(),
     })
     .returns(processRssFeedReturnType)
-    .authorization((allow) => [allow.authenticated(),
-      allow.publicApiKey(),])
+    .authorization((allow) => [
+      allow.authenticated(),
+      allow.publicApiKey(),
+    ])
     .handler(a.handler.function(processRssFeed)),
 
   fetchGNews: a
@@ -127,7 +131,7 @@ const schema = a.schema({
   .authorization((allow) => [
     allow.owner(),
     allow.authenticated(),
-    allow.publicApiKey(),
+    allow.publicApiKey().to(['read', 'create', 'update', 'delete']), // Explicitly allow full access for Lambda
   ]),
 
   UserFeedSubscription: a
@@ -178,7 +182,7 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.owner(), 
-      allow.publicApiKey(),
+      allow.publicApiKey().to(['read', 'create', 'update', 'delete']), // Explicitly allow full access for Lambda
       allow.authenticated().to(["read"]),
     ]),
 
@@ -208,10 +212,13 @@ const schema = a.schema({
       summarizer: a.belongsTo("Summarizer", "summarizerId"),
       articleId: a.id(),
       article: a.belongsTo("Article", "articleId"),
-      userId: a.string(),  // Added userId field to support user-specific summaries
+      userId: a.string(),
     })
-    .authorization((allow) => [allow.owner(),
-      allow.publicApiKey(), allow.authenticated().to(["read"])]),
+    .authorization((allow) => [
+      allow.owner(),
+      allow.publicApiKey(), 
+      allow.authenticated().to(["read"])
+    ]),
 
   Summarizer: a
     .model({

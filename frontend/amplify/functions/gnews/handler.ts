@@ -96,6 +96,7 @@ const fetchGNewsArticles = async function(
     }
 
     const data = response.data as GNewsResponse;
+    console.log(`Received ${data.articles.length} articles from GNews API`);
 
     // Process articles
     const articles = data.articles.map((article) => ({
@@ -112,37 +113,47 @@ const fetchGNewsArticles = async function(
       ]
     }));
 
-    // Store articles in the database using Promise.all
-    const results = await Promise.all(
-      articles.map(async (article) => {
-        try {
-          // Check if article already exists
-          const existingArticles = await client.models.Article.list({
-            filter: {
-              url: { eq: article.url },
-              feedId: { eq: feedId }
-            }
-          });
+    let createdCount = 0;
+    let skippedCount = 0;
+    let errorCount = 0;
 
-          if (existingArticles.data.length === 0) {
-            // Create new article if it doesn't exist
-            const result = await client.models.Article.create(article);
-            return { created: true, article: result.data };
+    // Process articles sequentially to ensure accurate counting
+    for (const article of articles) {
+      try {
+        // Check if article already exists
+        const existingArticles = await client.models.Article.list({
+          filter: {
+            url: { eq: article.url },
+            feedId: { eq: feedId }
           }
-          return { created: false, article: existingArticles.data[0] };
-        } catch (error) {
-          console.error('Error creating article:', error);
-          return { created: false, error };
-        }
-      })
-    );
+        });
 
-    const createdCount = results.filter(r => r.created).length;
-    const lastArticleMade = results[results.length - 1]?.article;
+        if (existingArticles.data.length === 0) {
+          // Create new article if it doesn't exist
+          const result = await client.models.Article.create(article);
+          if (result.data) {
+            createdCount++;
+            console.log(`Created new article: ${article.title}`);
+            console.log("Article creation result data: ", JSON.stringify(result.data));
+          } else {
+            errorCount++;
+            console.error(`Failed to create article: ${article.title}`);
+          }
+        } else {
+          skippedCount++;
+          console.log(`Skipped existing article: ${article.title}`);
+        }
+      } catch (error) {
+        errorCount++;
+        console.error(`Error processing article ${article.title}:`, error);
+      }
+    }
+
+    console.log(`Final counts - Created: ${createdCount}, Skipped: ${skippedCount}, Errors: ${errorCount}`);
 
     return {
       success: true,
-      message: `Processed ${articles.length} articles, created ${createdCount} new articles.` + "Here's some info on the feed: " + JSON.stringify(feed),
+      message: `Fetched ${articles.length} articles from GNews API. Created ${createdCount} new articles, skipped ${skippedCount} existing articles${errorCount > 0 ? `, failed to process ${errorCount} articles` : ''}.`,
       articles,
     };
 

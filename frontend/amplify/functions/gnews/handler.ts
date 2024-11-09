@@ -15,6 +15,9 @@ export const handler: Schema["fetchGNews"]["functionHandler"] = async (event) =>
 
   // Fetch the feed to get its GNews parameters
   const feed = await client.models.Feed.get({ id: feedId });
+  console.log('Fetched feed:', JSON.stringify(feed));
+  console.log("Feed search terms: ", feed.data?.searchTerms);
+  
   
   if (!feed.data) {
     throw new Error(`Feed with ID ${feedId} not found`);
@@ -139,7 +142,7 @@ const fetchGNewsArticles = async function(
 
     return {
       success: true,
-      message: `Processed ${articles.length} articles, created ${createdCount} new articles.`,
+      message: `Processed ${articles.length} articles, created ${createdCount} new articles.` + "Here's some info on the feed: " + JSON.stringify(feed),
       articles,
     };
 

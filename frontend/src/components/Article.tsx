@@ -3,17 +3,19 @@ import { useParams } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/api';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { 
-  Card, 
-  Heading, 
-  Text, 
-  View, 
-  Loader, 
-  SelectField,
+  Typography,
+  Box,
+  Paper,
+  Grid,
+  CircularProgress,
   Alert,
-  Flex,
-  Divider,
-  Button
-} from '@aws-amplify/ui-react';
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
+  Divider
+} from '@mui/material';
 import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
@@ -138,73 +140,147 @@ function Article() {
     fetchSummary();
   }, [selectedSummarizerId, article, articleId, loading, user.username]);
 
-  if (loading) return <Loader />;
-  if (error) return <Alert variation="error">{error}</Alert>;
-  if (!article) return <Text>No article found</Text>;
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+  
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
+  
+  if (!article) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography>No article found</Typography>
+      </Box>
+    );
+  }
 
   if (!article.fullText) {
     return (
-      <View padding="2rem">
-        <Card>
-          <Text>No text available for this article</Text>
-        </Card>
-      </View>
+      <Box sx={{ p: 3 }}>
+        <Paper 
+          elevation={3}
+          sx={{ 
+            p: 3,
+            transition: 'box-shadow 0.2s ease-in-out',
+            '&:hover': {
+              boxShadow: (theme) => theme.shadows[6],
+            }
+          }}
+        >
+          <Typography>No text available for this article</Typography>
+        </Paper>
+      </Box>
     );
   }
+
   const truncatedText = article.fullText.slice(0, 30) + '...';
 
   return (
-    <View padding="2rem">
-      <Card>
-        <Heading level={1} marginBottom="1rem">{article.title}</Heading>
-        <Text variation="tertiary" marginBottom="1rem">
-          Published: {article.createdAt ? new Date(article.createdAt).toLocaleDateString() : 'Unknown'}
-        </Text>
-
-        {/* Summary Section */}
-        <Heading level={3} marginBottom="1rem">Article Summary</Heading>
-        <Flex direction="column" gap="1rem" marginBottom="2rem">
-          <SelectField
-            label="Select Summarizer"
-            value={selectedSummarizerId}
-            onChange={e => setSelectedSummarizerId(e.target.value)}
+    <Box sx={{ p: 3 }}>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Paper 
+            elevation={3}
+            sx={{ 
+              p: 3,
+              bgcolor: 'background.paper',
+              transition: 'box-shadow 0.2s ease-in-out',
+              '&:hover': {
+                boxShadow: (theme) => theme.shadows[6],
+              }
+            }}
           >
-            {summarizers.map(summarizer => (
-              <option key={summarizer.id} value={summarizer.id}>
-                {summarizer.name} {summarizer.tier === 'PRO' ? '(Pro)' : ''}
-              </option>
-            ))}
-          </SelectField>
+            <Typography variant="h4" component="h1" gutterBottom>
+              {article.title}
+            </Typography>
+            
+            <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+              Published: {article.createdAt ? new Date(article.createdAt).toLocaleDateString() : 'Unknown'}
+            </Typography>
 
-          {summaryState.loading ? (
-            <Flex alignItems="center" gap="1rem">
-              <Loader size="small" />
-              <Text>Generating summary...</Text>
-            </Flex>
-          ) : summaryState.error ? (
-            <Alert variation="error">{summaryState.error}</Alert>
-          ) : summaryState.text ? (
-            <Card variation="elevated">
-              <Text>{summaryState.text}</Text>
-            </Card>
-          ) : null}
-        </Flex>
-        
-        <Divider marginBottom="2rem" />
-        
-        {/* Article Text Section */}
-        <Heading level={3} marginBottom="1rem">Full Article</Heading>
-        <Text marginBottom="1rem">
-          {showFullText ? article.fullText : truncatedText}
-        </Text>
-        <Button
-          onClick={() => setShowFullText(!showFullText)}
-          marginBottom="1rem"
-        >
-          {showFullText ? 'Show Less' : 'Show More'}
-        </Button>
-      </Card>
-    </View>
+            {/* Summary Section */}
+            <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
+              Article Summary
+            </Typography>
+            
+            <Box sx={{ mb: 4 }}>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Select Summarizer</InputLabel>
+                <Select
+                  value={selectedSummarizerId}
+                  onChange={(e) => setSelectedSummarizerId(e.target.value)}
+                  label="Select Summarizer"
+                >
+                  {summarizers.map(summarizer => (
+                    <MenuItem key={summarizer.id} value={summarizer.id}>
+                      {summarizer.name} {summarizer.tier === 'PRO' ? '(Pro)' : ''}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              {summaryState.loading ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <CircularProgress size={20} />
+                  <Typography>Generating summary...</Typography>
+                </Box>
+              ) : summaryState.error ? (
+                <Alert severity="error">{summaryState.error}</Alert>
+              ) : summaryState.text ? (
+                <Paper 
+                  elevation={1}
+                  sx={{ 
+                    p: 2,
+                    bgcolor: 'background.default',
+                    transition: 'transform 0.2s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                    }
+                  }}
+                >
+                  <Typography>{summaryState.text}</Typography>
+                </Paper>
+              ) : null}
+            </Box>
+            
+            <Divider sx={{ my: 4 }} />
+            
+            {/* Article Text Section */}
+            <Typography variant="h5" gutterBottom>
+              Full Article
+            </Typography>
+            
+            <Typography paragraph>
+              {showFullText ? article.fullText : truncatedText}
+            </Typography>
+            
+            <Button
+              variant="contained"
+              onClick={() => setShowFullText(!showFullText)}
+              sx={{ 
+                mt: 2,
+                transition: 'transform 0.2s ease-in-out',
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                }
+              }}
+            >
+              {showFullText ? 'Show Less' : 'Show More'}
+            </Button>
+          </Paper>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
 

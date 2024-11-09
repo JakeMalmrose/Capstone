@@ -150,6 +150,20 @@ const schema = a.schema({
       allow.publicApiKey(),
     ]),
 
+  UserArticleStatus: a
+    .model({
+      userId: a.string().required(),
+      articleId: a.id().required(),
+      article: a.belongsTo("Article", "articleId"),
+      isRead: a.boolean().required(),
+      readAt: a.datetime(),
+    })
+    .authorization((allow) => [
+      allow.owner(),
+      allow.authenticated().to(["read"]),
+      allow.publicApiKey(),
+    ]),
+
   Website: a
     .model({
       name: a.string().required(),
@@ -196,6 +210,7 @@ const schema = a.schema({
       feedId: a.id().required(),
       feed: a.belongsTo("Feed", "feedId"),
       summaries: a.hasMany("Summary", "articleId"),
+      userStatuses: a.hasMany("UserArticleStatus", "articleId"),
     })
     .authorization((allow) => [
       allow.owner(), 

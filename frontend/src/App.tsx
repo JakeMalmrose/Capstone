@@ -26,6 +26,7 @@ import {
   Language as LanguageIcon,
   AdminPanelSettings as AdminIcon,
   Settings as SettingsIcon,
+  AutoStories as ReadIcon,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { theme } from './Theme';
@@ -45,6 +46,7 @@ import Feed from './components/Feed';
 import Article from './components/Article';
 import MyFeeds from './components/MyFeeds';
 import UserPreferences from './components/UserPreferences';
+import UnreadArticles from './components/UnreadArticles';
 
 const DRAWER_WIDTH = 240;
 
@@ -75,6 +77,7 @@ function App() {
 
   const navigationItems = [
     { text: 'Home', icon: <HomeIcon />, path: '/' },
+    { text: 'Read Articles', icon: <ReadIcon />, path: '/unread' },
     { text: 'My feeds', icon: <ArticleIcon />, path: '/MyFeeds' },
     //{ text: 'Extractor', icon: <LinkIcon />, path: '/extractor' }, // don't need this as it's just a showcase
     { text: 'Websites', icon: <LanguageIcon />, path: '/websites' },
@@ -206,6 +209,7 @@ function App() {
               <Container maxWidth="lg">
                 <Routes>
                   <Route path="/" element={<Home />} />
+                  <Route path="/unread" element={<UnreadArticles />} />
                   <Route path="/Summarizer" element={<Summarizer />} />
                   <Route path="/MyFeeds" element={<MyFeeds />} />
                   <Route path="/extractor" element={<Extractor />} />

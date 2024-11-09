@@ -25,6 +25,7 @@ useEffect(() => {
 
 const navLinks = [
     { path: '/', label: 'Home' },
+    { path: '/unread', label: 'Read Articles' },
     { path: '/summarizer', label: 'Summarizer' },
     { path: '/extractor', label: 'Extractor' },
     { path: '/websites', label: 'Websites' },

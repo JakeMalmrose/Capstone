@@ -9,5 +9,5 @@ export const summarize = defineFunction({
     ANTHROPIC_API_KEY: secret("anthropic-api-key"),
     OLLAMA_BASE_URL: "http://localhost:11434", // This could also be a secret if needed
   },
-  timeoutSeconds: 30,
+  timeoutSeconds: 40,
 });

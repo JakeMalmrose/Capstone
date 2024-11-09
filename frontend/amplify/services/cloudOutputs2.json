@@ -53,6 +53,27 @@
               "isRequired": true,
               "attributes": []
             },
+            "isPremium": {
+              "name": "isPremium",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
+              "attributes": []
+            },
+            "defaultSummarizerId": {
+              "name": "defaultSummarizerId",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "specialRequests": {
+              "name": "specialRequests",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "gNewsCountry": {
               "name": "gNewsCountry",
               "isArray": false,
@@ -121,6 +142,152 @@
                   {
                     "allow": "private",
                     "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  },
+                  {
+                    "allow": "public",
+                    "provider": "apiKey",
+                    "operations": [
+                      "read",
+                      "create",
+                      "update",
+                      "delete"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        },
+        "UserFeedSubscription": {
+          "name": "UserFeedSubscription",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "userId": {
+              "name": "userId",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "feedId": {
+              "name": "feedId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "feed": {
+              "name": "feed",
+              "isArray": false,
+              "type": {
+                "model": "Feed"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "association": {
+                "connectionType": "BELONGS_TO",
+                "targetNames": [
+                  "feedId"
+                ]
+              }
+            },
+            "subscriptionDate": {
+              "name": "subscriptionDate",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": []
+            },
+            "notificationsEnabled": {
+              "name": "notificationsEnabled",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
+              "attributes": []
+            },
+            "customName": {
+              "name": "customName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "lastReadDate": {
+              "name": "lastReadDate",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "UserFeedSubscriptions",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "provider": "userPools",
+                    "ownerField": "owner",
+                    "allow": "owner",
+                    "identityClaim": "cognito:username",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  },
+                  {
+                    "allow": "private",
+                    "operations": [
+                      "read"
+                    ]
+                  },
+                  {
+                    "allow": "public",
+                    "provider": "apiKey",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
                       "read"
                     ]
                   }
@@ -355,6 +522,48 @@
                 ]
               }
             },
+            "subscribers": {
+              "name": "subscribers",
+              "isArray": true,
+              "type": {
+                "model": "UserFeedSubscription"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true,
+              "association": {
+                "connectionType": "HAS_MANY",
+                "associatedWith": [
+                  "feedId"
+                ]
+              }
+            },
+            "gNewsCategory": {
+              "name": "gNewsCategory",
+              "isArray": false,
+              "type": {
+                "enum": "FeedGNewsCategory"
+              },
+              "isRequired": false,
+              "attributes": []
+            },
+            "gNewsCountry": {
+              "name": "gNewsCountry",
+              "isArray": false,
+              "type": {
+                "enum": "FeedGNewsCountry"
+              },
+              "isRequired": false,
+              "attributes": []
+            },
+            "searchTerms": {
+              "name": "searchTerms",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
             "createdAt": {
               "name": "createdAt",
               "isArray": false,
@@ -399,10 +608,10 @@
                     "allow": "public",
                     "provider": "apiKey",
                     "operations": [
+                      "read",
                       "create",
                       "update",
-                      "delete",
-                      "read"
+                      "delete"
                     ]
                   },
                   {
@@ -639,6 +848,13 @@
                 ]
               }
             },
+            "userId": {
+              "name": "userId",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "updatedAt": {
               "name": "updatedAt",
               "isArray": false,
@@ -871,8 +1087,33 @@
         "FeedType": {
           "name": "FeedType",
           "values": [
+            "GNEWS",
             "RSS",
             "OTHER"
+          ]
+        },
+        "FeedGNewsCategory": {
+          "name": "FeedGNewsCategory",
+          "values": [
+            "general",
+            "world",
+            "nation",
+            "business",
+            "technology",
+            "entertainment",
+            "sports",
+            "science",
+            "health"
+          ]
+        },
+        "FeedGNewsCountry": {
+          "name": "FeedGNewsCountry",
+          "values": [
+            "us",
+            "gb",
+            "au",
+            "ca",
+            "in"
           ]
         },
         "SummarizerTier": {
@@ -880,6 +1121,38 @@
           "values": [
             "FREE",
             "PRO"
+          ]
+        },
+        "ChatWithLlmReturnTypeFeedSuggestionType": {
+          "name": "ChatWithLlmReturnTypeFeedSuggestionType",
+          "values": [
+            "RSS",
+            "GNEWS",
+            "OTHER"
+          ]
+        },
+        "ChatWithLlmReturnTypeFeedSuggestionGNewsCategory": {
+          "name": "ChatWithLlmReturnTypeFeedSuggestionGNewsCategory",
+          "values": [
+            "general",
+            "world",
+            "nation",
+            "business",
+            "technology",
+            "entertainment",
+            "sports",
+            "science",
+            "health"
+          ]
+        },
+        "ChatWithLlmReturnTypeFeedSuggestionGNewsCountry": {
+          "name": "ChatWithLlmReturnTypeFeedSuggestionGNewsCountry",
+          "values": [
+            "us",
+            "gb",
+            "au",
+            "ca",
+            "in"
           ]
         },
         "ProcessRssFeedReturnTypeFeedDataType": {
@@ -891,6 +1164,27 @@
         }
       },
       "nonModels": {
+        "ChatWithLLMReturnType": {
+          "name": "ChatWithLLMReturnType",
+          "fields": {
+            "response": {
+              "name": "response",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "feedSuggestion": {
+              "name": "feedSuggestion",
+              "isArray": false,
+              "type": {
+                "nonModel": "ChatWithLLMReturnTypeFeedSuggestion"
+              },
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
         "ProcessRssFeedReturnType": {
           "name": "ProcessRssFeedReturnType",
           "fields": {
@@ -926,25 +1220,6 @@
             }
           }
         },
-        "RssToDBReturnType": {
-          "name": "RssToDBReturnType",
-          "fields": {
-            "success": {
-              "name": "success",
-              "isArray": false,
-              "type": "Boolean",
-              "isRequired": false,
-              "attributes": []
-            },
-            "message": {
-              "name": "message",
-              "isArray": false,
-              "type": "String",
-              "isRequired": false,
-              "attributes": []
-            }
-          }
-        },
         "FetchGNewsReturnType": {
           "name": "FetchGNewsReturnType",
           "fields": {
@@ -966,6 +1241,75 @@
               "name": "articles",
               "isArray": true,
               "type": "AWSJSON",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            }
+          }
+        },
+        "ChatWithLLMReturnTypeFeedSuggestion": {
+          "name": "ChatWithLLMReturnTypeFeedSuggestion",
+          "fields": {
+            "name": {
+              "name": "name",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "url": {
+              "name": "url",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "description": {
+              "name": "description",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "type": {
+              "name": "type",
+              "isArray": false,
+              "type": {
+                "enum": "ChatWithLlmReturnTypeFeedSuggestionType"
+              },
+              "isRequired": false,
+              "attributes": []
+            },
+            "gNewsCategory": {
+              "name": "gNewsCategory",
+              "isArray": false,
+              "type": {
+                "enum": "ChatWithLlmReturnTypeFeedSuggestionGNewsCategory"
+              },
+              "isRequired": false,
+              "attributes": []
+            },
+            "gNewsCountry": {
+              "name": "gNewsCountry",
+              "isArray": false,
+              "type": {
+                "enum": "ChatWithLlmReturnTypeFeedSuggestionGNewsCountry"
+              },
+              "isRequired": false,
+              "attributes": []
+            },
+            "searchTerms": {
+              "name": "searchTerms",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
+            "tags": {
+              "name": "tags",
+              "isArray": true,
+              "type": "String",
               "isRequired": false,
               "attributes": [],
               "isArrayNullable": true
@@ -1016,16 +1360,24 @@
         }
       },
       "queries": {
-        "sayHello": {
-          "name": "sayHello",
+        "chatWithLLM": {
+          "name": "chatWithLLM",
           "isArray": false,
-          "type": "String",
+          "type": {
+            "nonModel": "ChatWithLLMReturnType"
+          },
           "isRequired": false,
           "arguments": {
-            "name": {
-              "name": "name",
+            "message": {
+              "name": "message",
               "isArray": false,
               "type": "String",
+              "isRequired": false
+            },
+            "chatHistory": {
+              "name": "chatHistory",
+              "isArray": false,
+              "type": "AWSJSON",
               "isRequired": false
             }
           }
@@ -1050,6 +1402,12 @@
             },
             "summarizerId": {
               "name": "summarizerId",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "userId": {
+              "name": "userId",
               "isArray": false,
               "type": "String",
               "isRequired": false
@@ -1109,28 +1467,6 @@
         }
       },
       "mutations": {
-        "rssToDB": {
-          "name": "rssToDB",
-          "isArray": false,
-          "type": {
-            "nonModel": "RssToDBReturnType"
-          },
-          "isRequired": false,
-          "arguments": {
-            "feedUrl": {
-              "name": "feedUrl",
-              "isArray": false,
-              "type": "String",
-              "isRequired": false
-            },
-            "websiteId": {
-              "name": "websiteId",
-              "isArray": false,
-              "type": "String",
-              "isRequired": false
-            }
-          }
-        },
         "fetchGNews": {
           "name": "fetchGNews",
           "isArray": false,
@@ -1139,18 +1475,6 @@
           },
           "isRequired": false,
           "arguments": {
-            "country": {
-              "name": "country",
-              "isArray": false,
-              "type": "String",
-              "isRequired": false
-            },
-            "category": {
-              "name": "category",
-              "isArray": false,
-              "type": "String",
-              "isRequired": false
-            },
             "websiteId": {
               "name": "websiteId",
               "isArray": false,

@@ -116,9 +116,9 @@ function UnreadArticles() {
       // Get all articles from these feeds
       const articles = await client.models.Article.list({
         filter: {
-          or: feedIds.map(feedId => ({
-            feedId: { eq: feedId }
-          }))
+              or: feedIds.map(feedId => ({
+                feedId: { eq: feedId }
+              }))
         }
       });
       
@@ -127,7 +127,7 @@ function UnreadArticles() {
         filter: {
           userId: { eq: user.userId },
           isRead: { eq: true }
-        }
+            }
       });
       
       const readArticleIds = new Set(readStatuses.data.map(status => status.articleId));
@@ -147,7 +147,7 @@ function UnreadArticles() {
     }
     setLoading(false);
   };
-
+  
   const markAsRead = async () => {
     if (!currentArticle) return;
     
@@ -160,7 +160,7 @@ function UnreadArticles() {
         readAt: new Date().toISOString(),
       });
       
-      fetchNextUnreadArticle();
+        fetchNextUnreadArticle();
     } catch (err) {
       console.error('Error marking article as read:', err);
       setError('Failed to mark article as read. Please try again.');
@@ -203,7 +203,7 @@ function UnreadArticles() {
   const truncatedText = currentArticle.fullText ? currentArticle.fullText.slice(0, 40) + '...' : "No text available for this article";
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1, sm: 3 }, maxWidth: '100%' }}>
       <Typography variant="h4" component="h1" gutterBottom>
         Read Articles
       </Typography>
@@ -257,22 +257,6 @@ function UnreadArticles() {
           </Box>
 
           {/* Full Text Section */}
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Full Article
-            </Typography>
-            <Typography variant="body1">
-              {showFullText ? currentArticle.fullText : truncatedText}
-            </Typography>
-            <Button
-              variant="text"
-              onClick={() => setShowFullText(!showFullText)}
-              sx={{ mt: 1 }}
-            >
-              {showFullText ? 'Show Less' : 'Show More'}
-            </Button>
-          </Box>
-
           <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
             <Button
               variant="outlined"
@@ -290,6 +274,23 @@ function UnreadArticles() {
               Mark as Read & Next
             </Button>
           </Stack>
+
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Full Article
+            </Typography>
+            <Typography variant="body1">
+              {showFullText ? currentArticle.fullText : truncatedText}
+            </Typography>
+            <Button
+              variant="text"
+              onClick={() => setShowFullText(!showFullText)}
+              sx={{ mt: 1 }}
+            >
+              {showFullText ? 'Show Less' : 'Show More'}
+            </Button>
+          </Box>
+
         </CardContent>
       </Card>
     </Box>

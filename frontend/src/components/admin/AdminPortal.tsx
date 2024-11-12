@@ -68,6 +68,7 @@ function AdminPortal() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ErrorState | null>(null);
+  const [fetchingNews, setFetchingNews] = useState(false);
 
   useEffect(() => {
     async function fetchAdminStats() {
@@ -96,6 +97,26 @@ function AdminPortal() {
 
     fetchAdminStats();
   }, []);
+
+  const handleFetchAllNews = async () => {
+    setFetchingNews(true);
+    setError(null);
+    try {
+      await client.mutations.fetchAllGNews();
+      setError({
+        message: 'Successfully triggered news fetch for all sources',
+        severity: 'success'
+      });
+    } catch (err) {
+      console.error('Error triggering news fetch:', err);
+      setError({
+        message: 'Failed to trigger news fetch. Please try again later.',
+        severity: 'error'
+      });
+    } finally {
+      setFetchingNews(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -156,16 +177,24 @@ function AdminPortal() {
           >
             Manage Summarizers
           </Button>
+          <Button
+            onClick={handleFetchAllNews}
+            disabled={fetchingNews}
+            variant="contained"
+            sx={{ 
+              backgroundColor: 'primary.main',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              }
+            }}
+          >
+            {fetchingNews ? 'Fetching News...' : 'Fetch All News'}
+          </Button>
         </Box>
       </Box>
 
       <Box sx={{ mt: 4 }}>
       </Box>
-      {error && (
-        <Alert severity={error.severity} sx={{ mb: 3 }}>
-          {error.message}
-        </Alert>
-      )}
 
       <Box sx={{ mt: 4 }}>
         <Typography variant="h6" sx={{ mb: 3 }}>

@@ -77,10 +77,9 @@ function App() {
 
   const navigationItems = [
     { text: 'Home', icon: <HomeIcon />, path: '/' },
-    { text: 'Read Articles', icon: <ReadIcon />, path: '/unread' },
+    { text: 'My Newsfeed', icon: <ReadIcon />, path: '/unread' },
     { text: 'My feeds', icon: <ArticleIcon />, path: '/MyFeeds' },
-    //{ text: 'Extractor', icon: <LinkIcon />, path: '/extractor' }, // don't need this as it's just a showcase
-    { text: 'Websites', icon: <LanguageIcon />, path: '/websites' },
+    { text: 'Browse All Websites', icon: <LanguageIcon />, path: '/websites' },
     { text: 'Preferences', icon: <SettingsIcon />, path: '/preferences' },
     ...(isAdmin ? [{ text: 'Admin Portal', icon: <AdminIcon />, path: '/admin' }] : []),
   ];
@@ -200,13 +199,19 @@ function App() {
               component="main"
               sx={{
                 flexGrow: 1,
-                p: 3,
+                p: { xs: 0, sm: 3 },
                 width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
                 mt: '64px',
                 overflow: 'auto',
               }}
             >
-              <Container maxWidth="lg">
+              <Container 
+                disableGutters={isMobile}
+                sx={{
+                  maxWidth: '100% !important',
+                  px: { xs: 0, sm: 3 }
+                }}
+              >
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/unread" element={<UnreadArticles />} />

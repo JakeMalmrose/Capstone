@@ -29,7 +29,17 @@ interface ArticleWithSummary {
   summary: SummaryState;
 }
 
+interface AppState {
+  summarizer: Schema['Summarizer']['type'] | null;
+  isInitialized: boolean;
+}
+
 function UnreadArticles() {
+  // Core state
+  const [appState, setAppState] = useState<AppState>({
+    summarizer: null,
+    isInitialized: false
+  });
   const [currentArticle, setCurrentArticle] = useState<Schema['Article']['type'] | null>(null);
   const [currentSummary, setCurrentSummary] = useState<SummaryState>({
     text: '',
@@ -37,35 +47,66 @@ function UnreadArticles() {
     error: null
   });
   const [nextArticleData, setNextArticleData] = useState<ArticleWithSummary | null>(null);
+  
+  // UI state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFullText, setShowFullText] = useState(false);
-  const [defaultSummarizer, setDefaultSummarizer] = useState<Schema['Summarizer']['type'] | null>(null);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  
-  // Load default summarizer first
+
+  // Initialize app - load user preferences and summarizer
   useEffect(() => {
-    async function loadDefaultSummarizer() {
+    async function initialize() {
+      if (appState.isInitialized) return;
+      
       try {
-        const summarizers = await client.models.Summarizer.list();
-        setDefaultSummarizer(summarizers.data[0] || null);
+        setLoading(true);
+        const user = await getCurrentUser();
+
+        // Load user preferences and summarizers in parallel
+        const [preferencesResponse, summarizersResponse] = await Promise.all([
+          client.models.UserPreferences.list({
+            filter: { userId: { eq: user.userId } }
+          }),
+          client.models.Summarizer.list()
+        ]);
+
+        // Determine which summarizer to use
+        const userPreference = preferencesResponse.data[0]?.defaultSummarizerId;
+        const selectedSummarizer = summarizersResponse.data.find(s => s.id === userPreference) 
+          || summarizersResponse.data[0] || null;
+
+        setAppState({
+          summarizer: selectedSummarizer,
+          isInitialized: true
+        });
+
+        // Load initial article after summarizer is set
+        const article = await fetchNextUnreadArticle();
+        if (article) {
+          setCurrentArticle(article);
+          // Summary will be loaded by the summary effect
+        }
+        
+        setLoading(false);
       } catch (err) {
-        console.error('Error loading default summarizer:', err);
-        setError('Failed to load summarizer. Please try again later.');
+        console.error('Error initializing app:', err);
+        setError('Failed to initialize application. Please try again later.');
+        setLoading(false);
       }
     }
-    loadDefaultSummarizer();
-  }, []);
+
+    initialize();
+  }, [appState.isInitialized]);
 
   const fetchSummary = async (articleId: string, fullText: string, userId: string) => {
-    if (!defaultSummarizer) return null;
+    if (!appState.summarizer) return null;
 
     try {
       // Try to fetch existing summary
       const existingSummaries = await client.models.Summary.list({
         filter: {
           articleId: { eq: articleId },
-          summarizerId: { eq: defaultSummarizer.id },
+          summarizerId: { eq: appState.summarizer.id },
           userId: { attributeExists: false }
         }
       });
@@ -82,7 +123,7 @@ function UnreadArticles() {
       const result = await client.queries.summarize({
         text: fullText,
         articleId: articleId,
-        summarizerId: defaultSummarizer.id,
+        summarizerId: appState.summarizer.id,
         userId: userId
       });
 
@@ -113,6 +154,10 @@ function UnreadArticles() {
       
       const feedIds = userFeeds.data.map(sub => sub.feedId);
       
+      if (feedIds.length === 0) {
+        return null;
+      }
+
       const articles = await client.models.Article.list({
         filter: {
           or: feedIds.map(feedId => ({
@@ -142,32 +187,10 @@ function UnreadArticles() {
     }
   };
 
-  // Initial load of current article
-  useEffect(() => {
-    async function loadInitialArticle() {
-      try {
-        setLoading(true);
-        const article = await fetchNextUnreadArticle();
-        setCurrentArticle(article);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error loading initial article:', err);
-        setError('Failed to load articles. Please try again later.');
-        setLoading(false);
-      }
-    }
-    
-    // Only load the initial article if we're on the initial load
-    if (isInitialLoad) {
-      loadInitialArticle();
-      setIsInitialLoad(false);
-    }
-  }, [isInitialLoad]);
-
-  // Load current article's summary - only after defaultSummarizer is loaded
+  // Load current article's summary
   useEffect(() => {
     async function loadCurrentSummary() {
-      if (!currentArticle || !currentArticle.fullText) return;
+      if (!currentArticle?.fullText || !appState.summarizer || !appState.isInitialized) return;
 
       setCurrentSummary(prev => ({ ...prev, loading: true }));
       try {
@@ -186,20 +209,17 @@ function UnreadArticles() {
       }
     }
 
-    // Only load summary if we have both the article and the defaultSummarizer
-    if (currentArticle && defaultSummarizer) {
-      loadCurrentSummary();
-    }
-  }, [currentArticle, defaultSummarizer]);
+    loadCurrentSummary();
+  }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized]);
 
-  // Prefetch next article when current article changes
+  // Prefetch next article
   useEffect(() => {
     async function prefetchNextArticle() {
-      if (!currentArticle || !defaultSummarizer) return;
+      if (!currentArticle || !appState.summarizer || !appState.isInitialized) return;
 
       try {
         const nextArticle = await fetchNextUnreadArticle(currentArticle.id);
-        if (nextArticle && nextArticle.fullText) {
+        if (nextArticle?.fullText) {
           const user = await getCurrentUser();
           const summary = await fetchSummary(nextArticle.id, nextArticle.fullText, user.userId);
           setNextArticleData({
@@ -216,7 +236,7 @@ function UnreadArticles() {
     }
 
     prefetchNextArticle();
-  }, [currentArticle, defaultSummarizer]);
+  }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized]);
   
   const markAsRead = async () => {
     if (!currentArticle) return;
@@ -278,7 +298,9 @@ function UnreadArticles() {
     );
   }
 
-  const truncatedText = currentArticle.fullText ? currentArticle.fullText.slice(0, 40) + '...' : "No text available for this article";
+  const truncatedText = currentArticle.fullText 
+    ? currentArticle.fullText.slice(0, 40) + '...' 
+    : "No text available for this article";
 
   return (
     <Box sx={{ p: { xs: 1, sm: 3 }, maxWidth: '100%' }}>

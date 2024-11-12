@@ -1,4 +1,3 @@
-import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../amplify/data/resource';
 import { LLMClient, LLMConfig, LLMMessage } from './llmClients/LLMClient';
 import client from './client';

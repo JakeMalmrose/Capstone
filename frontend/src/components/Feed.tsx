@@ -9,7 +9,6 @@ import {
   CardContent,
   CardActions,
   Button,
-  //CircularProgress,
   Alert,
   Chip,
   Stack,
@@ -17,12 +16,10 @@ import {
   IconButton,
   Tooltip,
   LinearProgress,
-  //Divider,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
   Refresh as RefreshIcon,
-  RssFeed as RssIcon,
   Newspaper as NewsIcon,
 } from '@mui/icons-material';
 import type { Schema } from '../../amplify/data/resource';
@@ -45,12 +42,6 @@ interface ArticleData {
   createdAt: string;
 }
 
-interface ProcessRssFeedResponse {
-  success: boolean;
-  feedData: FeedData;
-  articlesData: ArticleData[];
-}
-
 function Feed() {
   const { feedId } = useParams<{ feedId: string }>();
   const navigate = useNavigate();
@@ -58,7 +49,6 @@ function Feed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [articles, setArticles] = useState<Schema['Article']['type'][]>([]);
-  const [processingRss, setProcessingRss] = useState(false);
   const [fetchingNews, setFetchingNews] = useState(false);
   const [actionMessage, setActionMessage] = useState<{
     type: 'success' | 'error' | 'info';
@@ -107,65 +97,6 @@ function Feed() {
       setError('Failed to load feed and articles. Please try again later.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const processRss = async () => {
-    if (!feed) return;
-    setProcessingRss(true);
-    setActionMessage(null);
-    
-    try {
-      const { accessToken } = (await fetchAuthSession()).tokens ?? {};
-      if (!accessToken) {
-        throw new Error('No access token found');
-      }
-
-      const response = await client.queries.processRssFeed(
-        { feedUrl: feed.url, websiteId: feed.websiteId },
-        { authToken: accessToken.toString() }
-      );
-
-      if (response.data?.success) {
-        const { feedData, articlesData } = response.data as unknown as ProcessRssFeedResponse;
-        
-        if (!feedData || !articlesData) {
-          throw new Error('Invalid data received from processRssFeed');
-        }
-
-        if (!feedId || !feedData.name) {
-          throw new Error('Feed name is required');
-        }
-
-        await client.models.Feed.update({
-          id: feedId,
-          name: feedData.name,
-        });
-
-        let newArticles = JSON.parse(articlesData.toString());
-        for (const articleData of newArticles) {
-          await client.models.Article.create({
-            ...articleData,
-            feedId: feedId,
-          });
-        }
-        
-        setActionMessage({
-          type: 'success',
-          message: 'Successfully processed RSS feed'
-        });
-        await fetchFeedArticles();
-      } else {
-        throw new Error(response.data?.toString() || 'Failed to process RSS feed');
-      }
-    } catch (err) {
-      console.error('Error in processRss:', err);
-      setActionMessage({
-        type: 'error',
-        message: 'Failed to process RSS feed. Please try again later.'
-      });
-    } finally {
-      setProcessingRss(false);
     }
   };
 
@@ -255,15 +186,6 @@ function Feed() {
         <Stack direction="row" spacing={2}>
           <Button
             variant="contained"
-            onClick={processRss}
-            disabled={processingRss}
-            startIcon={<RssIcon />}
-          >
-            {processingRss ? 'Processing...' : 'Process RSS Feed'}
-          </Button>
-          
-          <Button
-            variant="contained"
             onClick={fetchGNews}
             disabled={fetchingNews}
             startIcon={<NewsIcon />}
@@ -293,7 +215,7 @@ function Feed() {
       </Paper>
 
       {/* Articles Section */}
-      {(processingRss || fetchingNews) && (
+      {(fetchingNews) && (
         <LinearProgress sx={{ mb: 2 }} />
       )}
 
@@ -342,7 +264,6 @@ function Feed() {
                 to={`/article/${article.id}`}
                 variant="outlined"
                 size="small"
-                //startIcon={<ArticleIcon />}
               >
                 View Full Article
               </Button>
@@ -352,7 +273,7 @@ function Feed() {
 
         {articles.length === 0 && (
           <Alert severity="info">
-            No articles found. Try processing the RSS feed or fetching news.
+            No articles found. Try fetching news.
           </Alert>
         )}
       </Stack>

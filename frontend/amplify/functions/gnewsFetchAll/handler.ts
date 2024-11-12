@@ -1,4 +1,3 @@
-import type { Schema } from "../../data/resource";
 import client from '../../services/client';
 
 export const handler = async () => {

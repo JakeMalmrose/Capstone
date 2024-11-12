@@ -1,4 +1,4 @@
-import { type ClientSchema, a, defineFunction } from "@aws-amplify/backend";
+import { defineFunction } from "@aws-amplify/backend";
 
 const fetchAllGNews = defineFunction({
   name: "fetchAllGNews",

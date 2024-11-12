@@ -1623,6 +1623,12 @@
               "isRequired": true
             }
           }
+        },
+        "fetchAllGNews": {
+          "name": "fetchAllGNews",
+          "isArray": false,
+          "type": "AWSJSON",
+          "isRequired": false
         }
       }
     }

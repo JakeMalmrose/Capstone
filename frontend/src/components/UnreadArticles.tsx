@@ -30,12 +30,18 @@ interface ArticleWithSummary {
 }
 
 function UnreadArticles() {
-  const [currentArticleData, setCurrentArticleData] = useState<ArticleWithSummary | null>(null);
+  const [currentArticle, setCurrentArticle] = useState<Schema['Article']['type'] | null>(null);
+  const [currentSummary, setCurrentSummary] = useState<SummaryState>({
+    text: '',
+    loading: false,
+    error: null
+  });
   const [nextArticleData, setNextArticleData] = useState<ArticleWithSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFullText, setShowFullText] = useState(false);
   const [defaultSummarizer, setDefaultSummarizer] = useState<Schema['Summarizer']['type'] | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // Load default summarizer first
   useEffect(() => {
@@ -95,9 +101,7 @@ function UnreadArticles() {
     }
   };
 
-  const fetchNextUnreadArticle = async (excludeArticleId?: string): Promise<ArticleWithSummary | null> => {
-    if (!defaultSummarizer) return null;
-    
+  const fetchNextUnreadArticle = async (excludeArticleId?: string): Promise<Schema['Article']['type'] | null> => {
     try {
       const user = await getCurrentUser();
       
@@ -131,76 +135,122 @@ function UnreadArticles() {
         article => !readArticleIds.has(article.id) && article.id !== excludeArticleId
       );
       
-      if (unreadArticle && unreadArticle.fullText) {
-        const summary = await fetchSummary(unreadArticle.id, unreadArticle.fullText, user.userId);
-        return {
-          article: unreadArticle,
-          summary: summary || { text: '', loading: false, error: null }
-        };
-      }
-      
-      return null;
+      return unreadArticle || null;
     } catch (err) {
       console.error('Error fetching unread article:', err);
       throw new Error('Failed to load unread articles');
     }
   };
+
+  // Initial load of current article
+  useEffect(() => {
+    async function loadInitialArticle() {
+      try {
+        setLoading(true);
+        const article = await fetchNextUnreadArticle();
+        setCurrentArticle(article);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error loading initial article:', err);
+        setError('Failed to load articles. Please try again later.');
+        setLoading(false);
+      }
+    }
+    
+    // Only load the initial article if we're on the initial load
+    if (isInitialLoad) {
+      loadInitialArticle();
+      setIsInitialLoad(false);
+    }
+  }, [isInitialLoad]);
+
+  // Load current article's summary - only after defaultSummarizer is loaded
+  useEffect(() => {
+    async function loadCurrentSummary() {
+      if (!currentArticle || !currentArticle.fullText) return;
+
+      setCurrentSummary(prev => ({ ...prev, loading: true }));
+      try {
+        const user = await getCurrentUser();
+        const summary = await fetchSummary(currentArticle.id, currentArticle.fullText, user.userId);
+        if (summary) {
+          setCurrentSummary(summary);
+        }
+      } catch (err) {
+        console.error('Error loading summary:', err);
+        setCurrentSummary(prev => ({
+          ...prev,
+          loading: false,
+          error: 'Failed to load summary'
+        }));
+      }
+    }
+
+    // Only load summary if we have both the article and the defaultSummarizer
+    if (currentArticle && defaultSummarizer) {
+      loadCurrentSummary();
+    }
+  }, [currentArticle, defaultSummarizer]);
+
+  // Prefetch next article when current article changes
+  useEffect(() => {
+    async function prefetchNextArticle() {
+      if (!currentArticle || !defaultSummarizer) return;
+
+      try {
+        const nextArticle = await fetchNextUnreadArticle(currentArticle.id);
+        if (nextArticle && nextArticle.fullText) {
+          const user = await getCurrentUser();
+          const summary = await fetchSummary(nextArticle.id, nextArticle.fullText, user.userId);
+          setNextArticleData({
+            article: nextArticle,
+            summary: summary || { text: '', loading: false, error: null }
+          });
+        } else {
+          setNextArticleData(null);
+        }
+      } catch (err) {
+        console.error('Error prefetching next article:', err);
+        // Don't show error to user since this is just prefetching
+      }
+    }
+
+    prefetchNextArticle();
+  }, [currentArticle, defaultSummarizer]);
   
   const markAsRead = async () => {
-    if (!currentArticleData?.article) return;
+    if (!currentArticle) return;
     
     try {
       const user = await getCurrentUser();
       await client.models.UserArticleStatus.create({
         userId: user.userId,
-        articleId: currentArticleData.article.id,
+        articleId: currentArticle.id,
         isRead: true,
         readAt: new Date().toISOString(),
       });
       
-      // Move next article to current
+      // Move next article to current if available
       if (nextArticleData) {
-        setCurrentArticleData(nextArticleData);
-        // Start fetching the next article
+        setCurrentArticle(nextArticleData.article);
+        setCurrentSummary(nextArticleData.summary);
         setNextArticleData(null);
-        const newNextArticle = await fetchNextUnreadArticle(nextArticleData.article.id);
-        setNextArticleData(newNextArticle);
       } else {
-        setCurrentArticleData(null);
+        // If no next article is prefetched, fetch one now
+        const nextArticle = await fetchNextUnreadArticle(currentArticle.id);
+        if (nextArticle) {
+          setCurrentArticle(nextArticle);
+          setCurrentSummary({ text: '', loading: true, error: null });
+        } else {
+          setCurrentArticle(null);
+          setCurrentSummary({ text: '', loading: false, error: null });
+        }
       }
     } catch (err) {
       console.error('Error marking article as read:', err);
       setError('Failed to mark article as read. Please try again.');
     }
   };
-
-  // Initial load of current and next articles
-  useEffect(() => {
-    async function loadInitialArticles() {
-      if (!defaultSummarizer) return;
-      
-      try {
-        setLoading(true);
-        // Fetch current article
-        const current = await fetchNextUnreadArticle();
-        setCurrentArticleData(current);
-        
-        // If we found a current article, fetch the next one
-        if (current) {
-          const next = await fetchNextUnreadArticle(current.article.id);
-          setNextArticleData(next);
-        }
-        
-        setLoading(false);
-      } catch (err) {
-        console.error('Error loading initial articles:', err);
-        setError('Failed to load articles. Please try again later.');
-        setLoading(false);
-      }
-    }
-    
-    loadInitialArticles();
-  }, [defaultSummarizer]);
 
   if (loading) {
     return (
@@ -218,7 +268,7 @@ function UnreadArticles() {
     );
   }
 
-  if (!currentArticleData) {
+  if (!currentArticle) {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="info">
@@ -228,7 +278,6 @@ function UnreadArticles() {
     );
   }
 
-  const { article: currentArticle, summary: currentSummary } = currentArticleData;
   const truncatedText = currentArticle.fullText ? currentArticle.fullText.slice(0, 40) + '...' : "No text available for this article";
 
   return (

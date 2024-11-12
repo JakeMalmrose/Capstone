@@ -116,11 +116,18 @@ const fetchGNewsArticles = async function(
     let createdCount = 0;
     let skippedCount = 0;
     let errorCount = 0;
-
-    // Process articles sequentially to ensure accurate counting
+    const successfulArticles = [];
+    
     for (const article of articles) {
       try {
-        // Check if article already exists
+        // Log the exact article we're trying to process
+        console.log('Processing article:', {
+          url: article.url,
+          title: article.title,
+          feedId: article.feedId
+        });
+
+        // Check for existing article
         const existingArticles = await client.models.Article.list({
           filter: {
             url: { eq: article.url },
@@ -128,16 +135,44 @@ const fetchGNewsArticles = async function(
           }
         });
 
+        console.log('Existing articles check result:', {
+          count: existingArticles.data.length,
+          articles: existingArticles.data.map(a => ({id: a.id, url: a.url}))
+        });
+
         if (existingArticles.data.length === 0) {
-          // Create new article if it doesn't exist
+          // Log the exact data we're trying to create
+          console.log('Attempting to create article:', JSON.stringify(article));
+          
           const result = await client.models.Article.create(article);
-          if (result.data) {
+          
+          // Verify the creation result
+          console.log('Article creation result:', {
+            success: !!result.data,
+            data: result.data,
+            error: result.errors
+          });
+
+          // Immediately verify the article exists
+          const verifyCreation = await client.models.Article.list({
+            filter: {
+              url: { eq: article.url },
+              feedId: { eq: feedId }
+            }
+          });
+          
+          console.log('Creation verification result:', {
+            found: verifyCreation.data.length > 0,
+            article: verifyCreation.data[0]
+          });
+
+          if (result.data && verifyCreation.data.length > 0) {
             createdCount++;
-            console.log(`Created new article: ${article.title}`);
-            console.log("Article creation result data: ", JSON.stringify(result.data));
+            successfulArticles.push(result.data);
+            console.log(`Successfully created and verified article: ${article.title}`);
           } else {
             errorCount++;
-            console.error(`Failed to create article: ${article.title}`);
+            console.error(`Article creation failed verification: ${article.title}`);
           }
         } else {
           skippedCount++;
@@ -145,20 +180,38 @@ const fetchGNewsArticles = async function(
         }
       } catch (error) {
         errorCount++;
-        console.error(`Error processing article ${article.title}:`, error);
+        // Enhanced error logging
+        console.error('Article processing error:', {
+          title: article.title,
+          error: error instanceof Error ? {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          } : error
+        });
       }
     }
 
-    console.log(`Final counts - Created: ${createdCount}, Skipped: ${skippedCount}, Errors: ${errorCount}`);
+    // Log final state
+    console.log('Operation complete:', {
+      totalProcessed: articles.length,
+      created: createdCount,
+      skipped: skippedCount,
+      errors: errorCount,
+      successfulArticles: successfulArticles.map(a => ({
+        title: a.title,
+        url: a.url
+      }))
+    });
 
     return {
       success: true,
       message: `Fetched ${articles.length} articles from GNews API. Created ${createdCount} new articles, skipped ${skippedCount} existing articles${errorCount > 0 ? `, failed to process ${errorCount} articles` : ''}.`,
-      articles,
+      articles: successfulArticles,
     };
 
   } catch (error) {
-    console.error('Error in fetchGNewsArticles:', error);
+    console.error('Fatal error in fetchGNewsArticles:', error);
     throw error;
   }
 };

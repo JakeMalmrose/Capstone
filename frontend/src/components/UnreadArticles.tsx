@@ -24,15 +24,16 @@ interface SummaryState {
   error: string | null;
 }
 
+interface ArticleWithSummary {
+  article: Schema['Article']['type'];
+  summary: SummaryState;
+}
+
 function UnreadArticles() {
-  const [currentArticle, setCurrentArticle] = useState<Schema['Article']['type'] | null>(null);
+  const [currentArticleData, setCurrentArticleData] = useState<ArticleWithSummary | null>(null);
+  const [nextArticleData, setNextArticleData] = useState<ArticleWithSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [summaryState, setSummaryState] = useState<SummaryState>({
-    text: '',
-    loading: false,
-    error: null
-  });
   const [showFullText, setShowFullText] = useState(false);
   const [defaultSummarizer, setDefaultSummarizer] = useState<Schema['Summarizer']['type'] | null>(null);
   
@@ -51,9 +52,7 @@ function UnreadArticles() {
   }, []);
 
   const fetchSummary = async (articleId: string, fullText: string, userId: string) => {
-    if (!defaultSummarizer) return;
-
-    setSummaryState(prev => ({ ...prev, loading: true, error: null }));
+    if (!defaultSummarizer) return null;
 
     try {
       // Try to fetch existing summary
@@ -66,12 +65,11 @@ function UnreadArticles() {
       });
 
       if (existingSummaries.data.length > 0) {
-        setSummaryState(prev => ({
-          ...prev,
+        return {
           text: existingSummaries.data[0].text,
-          loading: false
-        }));
-        return;
+          loading: false,
+          error: null
+        };
       }
 
       // If no existing summary, generate new one
@@ -82,29 +80,27 @@ function UnreadArticles() {
         userId: userId
       });
 
-      setSummaryState(prev => ({
-        ...prev,
+      return {
         text: result.data || '',
-        loading: false
-      }));
+        loading: false,
+        error: null
+      };
     } catch (err) {
       console.error('Error fetching/generating summary:', err);
-      setSummaryState(prev => ({
-        ...prev,
-        error: 'Failed to generate summary. Please try again.',
-        loading: false
-      }));
+      return {
+        text: '',
+        loading: false,
+        error: 'Failed to generate summary. Please try again.'
+      };
     }
   };
-  
-  const fetchNextUnreadArticle = async () => {
-    if (!defaultSummarizer) return;
+
+  const fetchNextUnreadArticle = async (excludeArticleId?: string): Promise<ArticleWithSummary | null> => {
+    if (!defaultSummarizer) return null;
     
-    setLoading(true);
     try {
       const user = await getCurrentUser();
       
-      // Get all articles from subscribed feeds
       const userFeeds = await client.models.UserFeedSubscription.list({
         filter: {
           userId: { eq: user.userId }
@@ -113,65 +109,97 @@ function UnreadArticles() {
       
       const feedIds = userFeeds.data.map(sub => sub.feedId);
       
-      // Get all articles from these feeds
       const articles = await client.models.Article.list({
         filter: {
-              or: feedIds.map(feedId => ({
-                feedId: { eq: feedId }
-              }))
+          or: feedIds.map(feedId => ({
+            feedId: { eq: feedId }
+          }))
         }
       });
       
-      // Get user's read status for these articles
       const readStatuses = await client.models.UserArticleStatus.list({
         filter: {
           userId: { eq: user.userId },
           isRead: { eq: true }
-            }
+        }
       });
       
       const readArticleIds = new Set(readStatuses.data.map(status => status.articleId));
       
-      // Find first unread article
-      const unreadArticle = articles.data.find(article => !readArticleIds.has(article.id));
+      // Find first unread article that's not the excluded one
+      const unreadArticle = articles.data.find(
+        article => !readArticleIds.has(article.id) && article.id !== excludeArticleId
+      );
       
       if (unreadArticle && unreadArticle.fullText) {
-        setCurrentArticle(unreadArticle);
-        fetchSummary(unreadArticle.id, unreadArticle.fullText, user.userId);
-      } else {
-        setCurrentArticle(null);
+        const summary = await fetchSummary(unreadArticle.id, unreadArticle.fullText, user.userId);
+        return {
+          article: unreadArticle,
+          summary: summary || { text: '', loading: false, error: null }
+        };
       }
+      
+      return null;
     } catch (err) {
       console.error('Error fetching unread article:', err);
-      setError('Failed to load unread articles. Please try again later.');
+      throw new Error('Failed to load unread articles');
     }
-    setLoading(false);
   };
   
   const markAsRead = async () => {
-    if (!currentArticle) return;
+    if (!currentArticleData?.article) return;
     
     try {
       const user = await getCurrentUser();
       await client.models.UserArticleStatus.create({
         userId: user.userId,
-        articleId: currentArticle.id,
+        articleId: currentArticleData.article.id,
         isRead: true,
         readAt: new Date().toISOString(),
       });
       
-        fetchNextUnreadArticle();
+      // Move next article to current
+      if (nextArticleData) {
+        setCurrentArticleData(nextArticleData);
+        // Start fetching the next article
+        setNextArticleData(null);
+        const newNextArticle = await fetchNextUnreadArticle(nextArticleData.article.id);
+        setNextArticleData(newNextArticle);
+      } else {
+        setCurrentArticleData(null);
+      }
     } catch (err) {
       console.error('Error marking article as read:', err);
       setError('Failed to mark article as read. Please try again.');
     }
   };
 
-  // Only fetch articles after default summarizer is loaded
+  // Initial load of current and next articles
   useEffect(() => {
-    if (defaultSummarizer) {
-      fetchNextUnreadArticle();
+    async function loadInitialArticles() {
+      if (!defaultSummarizer) return;
+      
+      try {
+        setLoading(true);
+        // Fetch current article
+        const current = await fetchNextUnreadArticle();
+        setCurrentArticleData(current);
+        
+        // If we found a current article, fetch the next one
+        if (current) {
+          const next = await fetchNextUnreadArticle(current.article.id);
+          setNextArticleData(next);
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('Error loading initial articles:', err);
+        setError('Failed to load articles. Please try again later.');
+        setLoading(false);
+      }
     }
+    
+    loadInitialArticles();
   }, [defaultSummarizer]);
 
   if (loading) {
@@ -190,7 +218,7 @@ function UnreadArticles() {
     );
   }
 
-  if (!currentArticle) {
+  if (!currentArticleData) {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="info">
@@ -200,6 +228,7 @@ function UnreadArticles() {
     );
   }
 
+  const { article: currentArticle, summary: currentSummary } = currentArticleData;
   const truncatedText = currentArticle.fullText ? currentArticle.fullText.slice(0, 40) + '...' : "No text available for this article";
 
   return (
@@ -232,14 +261,14 @@ function UnreadArticles() {
               Summary
             </Typography>
             
-            {summaryState.loading ? (
+            {currentSummary.loading ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <CircularProgress size={20} />
                 <Typography>Generating summary...</Typography>
               </Box>
-            ) : summaryState.error ? (
-              <Alert severity="error">{summaryState.error}</Alert>
-            ) : summaryState.text ? (
+            ) : currentSummary.error ? (
+              <Alert severity="error">{currentSummary.error}</Alert>
+            ) : currentSummary.text ? (
               <Paper 
                 elevation={1}
                 sx={{ 
@@ -251,7 +280,7 @@ function UnreadArticles() {
                   }
                 }}
               >
-                <Typography>{summaryState.text}</Typography>
+                <Typography>{currentSummary.text}</Typography>
               </Paper>
             ) : null}
           </Box>

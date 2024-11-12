@@ -4,6 +4,7 @@ import { extractUrls } from "../functions/extract-urls/resource";
 import { processRssFeed } from "../functions/rss-parser/resource";
 import { fetchGNews } from "../functions/gnews/resource";
 import { chatWithLLM } from "../functions/chat-llm/resource";
+import { gnewsFetchAll } from "../functions/gnewsFetchAll/resource";
 
 const feedDataType = a.customType({
   name: a.string(),
@@ -116,6 +117,17 @@ const schema = a.schema({
       allow.publicApiKey(),
     ])
     .handler(a.handler.function(fetchGNews)),
+
+  fetchAllGNews: a
+    .mutation()
+    .returns(
+      a.json()
+    )
+    .authorization((allow) => [
+      allow.authenticated(),
+      allow.publicApiKey(),
+    ])
+    .handler(a.handler.function(gnewsFetchAll)),
 
   // Data Models
   UserPreferences: a

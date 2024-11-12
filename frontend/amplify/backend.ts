@@ -6,6 +6,7 @@ import { extractUrls } from './functions/extract-urls/resource';
 import { processRssFeed } from './functions/rss-parser/resource';
 import { fetchGNews } from './functions/gnews/resource';
 import { chatWithLLM } from './functions/chat-llm/resource';
+import { gnewsFetchAll } from './functions/gnewsFetchAll/resource';
 
 defineBackend({
   auth,
@@ -15,4 +16,5 @@ defineBackend({
   processRssFeed,
   fetchGNews,
   chatWithLLM,
+  gnewsFetchAll,
 });

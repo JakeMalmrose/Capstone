@@ -32,17 +32,7 @@ const gNewsCountryEnum = a.enum([
 
 const chatResponseType = a.customType({
   response: a.string(),
-  feedSuggestion:
-    a.customType({
-      name: a.string(),
-      url: a.string(),
-      description: a.string(),
-      type: a.enum(["RSS", "GNEWS", "OTHER"]),
-      gNewsCategory: gNewsCategoryEnum,
-      gNewsCountry: gNewsCountryEnum,
-      searchTerms: a.string().array(),
-      tags: a.string().array(),
-    }),
+  feed: a.id(),
 });
 
 const schema = a.schema({
@@ -143,7 +133,7 @@ const schema = a.schema({
   .authorization((allow) => [
     allow.owner(),
     allow.authenticated(),
-    allow.publicApiKey().to(['read', 'create', 'update', 'delete']), // Explicitly allow full access for Lambda
+    allow.publicApiKey().to(['read', 'create', 'update', 'delete']),
   ]),
 
   UserFeedSubscription: a
@@ -208,7 +198,7 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.owner(), 
-      allow.publicApiKey().to(['read', 'create', 'update', 'delete']), // Explicitly allow full access for Lambda
+      allow.publicApiKey().to(['read', 'create', 'update', 'delete']),
       allow.authenticated().to(["read"]),
     ]),
 

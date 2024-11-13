@@ -46,7 +46,7 @@ interface Feed {
 
 interface ChatResponse {
   response: string;
-  feed: Feed | null;
+  feed: string | null;
 }
 
 function Home() {
@@ -61,6 +61,7 @@ function Home() {
   const [feedDialog, setFeedDialog] = useState(false);
   const [currentFeed, setCurrentFeed] = useState<Feed | null>(null);
   const [isSubscribing, setIsSubscribing] = useState(false);
+  const [isFetchingFeed, setIsFetchingFeed] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -101,22 +102,26 @@ function Home() {
           }]);
   
           if (chatResponse.feed) {
-            console.log('Feed:', chatResponse.feed);
-            // For the subscription dialog, we only need to show the feed details
-            const feedForDialog = {
-              id: chatResponse.feed.id,
-              websiteId: chatResponse.feed.websiteId, 
-              name: chatResponse.feed.name,
-              description: chatResponse.feed.description,
-              type: chatResponse.feed.type,
-              url: chatResponse.feed.url,
-              tags: chatResponse.feed.tags,
-              gNewsCategory: chatResponse.feed.gNewsCategory,
-              gNewsCountry: chatResponse.feed.gNewsCountry,
-              searchTerms: chatResponse.feed.searchTerms
-            };
-            setCurrentFeed(feedForDialog);
-            setFeedDialog(true);
+            console.log('Feed ID:', chatResponse.feed);
+            setIsFetchingFeed(true);
+            try {
+              const feedResponse = await client.models.Feed.get({
+                id: chatResponse.feed
+              });
+              
+              if (feedResponse.data) {
+                console.log('Fetched feed:', feedResponse.data);
+                //amplify is error checking for fields being required when the chat-llm function returns this data
+                //@ts-ignore
+                setCurrentFeed(feedResponse.data);
+                setFeedDialog(true);
+              }
+            } catch (err) {
+              console.error('Error fetching feed:', err);
+              setError('Failed to fetch feed details. Please try again.');
+            } finally {
+              setIsFetchingFeed(false);
+            }
           }
         }
       }
@@ -139,8 +144,6 @@ function Home() {
     try {
       const { userId } = await getCurrentUser();
   
-      // Since we now receive a complete feed from the backend,
-      // we only need to create the subscription
       const existingSubscription = await client.models.UserFeedSubscription.list({
         filter: {
           feedId: { eq: currentFeed.id },
@@ -149,7 +152,6 @@ function Home() {
       });
   
       if (!existingSubscription.data || existingSubscription.data.length === 0) {
-        // Create subscription only if it doesn't exist
         await client.models.UserFeedSubscription.create({
           feedId: currentFeed.id,
           userId,
@@ -278,7 +280,7 @@ function Home() {
       {/* Feed Subscription Dialog */}
       <Dialog 
         open={feedDialog} 
-        onClose={() => !isSubscribing && setFeedDialog(false)}
+        onClose={() => !isSubscribing && !isFetchingFeed && setFeedDialog(false)}
         PaperProps={{
           sx: { 
             bgcolor: 'background.paper',
@@ -293,7 +295,11 @@ function Home() {
           </Box>
         </DialogTitle>
         <DialogContent>
-          {currentFeed && (
+          {isFetchingFeed ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : currentFeed && (
             <Box sx={{ pt: 1 }}>
               <Typography variant="h6" gutterBottom>
                 {currentFeed.name}
@@ -346,14 +352,14 @@ function Home() {
         <DialogActions>
           <Button 
             onClick={() => setFeedDialog(false)} 
-            disabled={isSubscribing}
+            disabled={isSubscribing || isFetchingFeed}
           >
             Cancel
           </Button>
           <Button 
             onClick={handleSubscribeToFeed} 
             variant="contained"
-            disabled={isSubscribing}
+            disabled={isSubscribing || isFetchingFeed}
             startIcon={isSubscribing ? <CircularProgress size={20} /> : <RssFeedIcon />}
           >
             {isSubscribing ? 'Subscribing...' : 'Subscribe'}

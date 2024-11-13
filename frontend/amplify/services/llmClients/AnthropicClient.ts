@@ -10,8 +10,12 @@ export class AnthropicClient implements LLMClient {
   
     async generateResponse(messages: LLMMessage[], config: LLMConfig = { model: 'claude-3-sonnet-20240229' }): Promise<string> {
       try {
+        // Find system message if it exists
+        const systemMessage = messages.find(msg => msg.role === 'system');
+        
         const response = await this.anthropic.messages.create({
           model: config.model,
+          system: systemMessage?.content,
           messages: messages
             .filter(msg => msg.role === 'user' || msg.role === 'assistant')
             .map(msg => ({

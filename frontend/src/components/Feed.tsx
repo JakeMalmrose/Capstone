@@ -25,21 +25,21 @@ import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
 
-// Define interfaces for the data structures
-interface FeedData {
-  name: string;
-  url: string;
-  description: string;
-  type: string;
-  websiteId: string;
-}
+// // Define interfaces for the data structures
+// interface FeedData {
+//   name: string;
+//   url: string;
+//   description: string;
+//   type: string;
+//   websiteId: string;
+// }
 
-interface ArticleData {
-  url: string;
-  title: string;
-  fullText: string;
-  createdAt: string;
-}
+// interface ArticleData {
+//   url: string;
+//   title: string;
+//   fullText: string;
+//   createdAt: string;
+// }
 
 function Feed() {
   const { feedId } = useParams<{ feedId: string }>();

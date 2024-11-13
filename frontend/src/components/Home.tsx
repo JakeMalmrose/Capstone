@@ -31,20 +31,22 @@ interface ChatMessage {
   isUser: boolean;
 }
 
-type FeedSuggestion = {
+interface Feed {
+  id: string;
   name: string;
   url: string;
   description: string;
   type: "RSS" | "GNEWS" | "OTHER";
   tags?: string[];
-  gNewsCategory?: string;
-  gNewsCountry?: string;
+  gNewsCategory?: "general" | "world" | "nation" | "business" | "technology" | "entertainment" | "sports" | "science" | "health";
+  gNewsCountry?: "us" | "gb" | "au" | "ca" | "in";
   searchTerms?: string[];
-};
+  websiteId: string;
+}
 
 interface ChatResponse {
   response: string;
-  feedSuggestion?: FeedSuggestion | null;
+  feed: Feed | null;
 }
 
 function Home() {
@@ -57,7 +59,7 @@ function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedDialog, setFeedDialog] = useState(false);
-  const [currentFeed, setCurrentFeed] = useState<FeedSuggestion | null>(null);
+  const [currentFeed, setCurrentFeed] = useState<Feed | null>(null);
   const [isSubscribing, setIsSubscribing] = useState(false);
 
   const scrollToBottom = () => {
@@ -70,24 +72,24 @@ function Home() {
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
-
+  
     const userMessage = inputMessage.trim();
     setMessages(prev => [...prev, { text: userMessage, isUser: true }]);
     setInputMessage('');
     setIsLoading(true);
     setError(null);
-
+  
     try {
       const chatHistory = JSON.stringify(messages.map(msg => ({
         role: msg.isUser ? 'user' : 'assistant',
         content: msg.text
       })));
-
+  
       const response = await client.queries.chatWithLLM({
         message: userMessage,
         chatHistory
       });
-
+  
       if (response.data) {
         console.log('Chat response:', response.data);
         const chatResponse = response.data as ChatResponse;
@@ -97,10 +99,23 @@ function Home() {
             text: chatResponse.response, 
             isUser: false 
           }]);
-
-          if (chatResponse.feedSuggestion) {
-            console.log('Feed suggestion:', chatResponse.feedSuggestion);
-            setCurrentFeed(chatResponse.feedSuggestion);
+  
+          if (chatResponse.feed) {
+            console.log('Feed:', chatResponse.feed);
+            // For the subscription dialog, we only need to show the feed details
+            const feedForDialog = {
+              id: chatResponse.feed.id,
+              websiteId: chatResponse.feed.websiteId, 
+              name: chatResponse.feed.name,
+              description: chatResponse.feed.description,
+              type: chatResponse.feed.type,
+              url: chatResponse.feed.url,
+              tags: chatResponse.feed.tags,
+              gNewsCategory: chatResponse.feed.gNewsCategory,
+              gNewsCountry: chatResponse.feed.gNewsCountry,
+              searchTerms: chatResponse.feed.searchTerms
+            };
+            setCurrentFeed(feedForDialog);
             setFeedDialog(true);
           }
         }
@@ -119,53 +134,30 @@ function Home() {
 
   const handleSubscribeToFeed = async () => {
     if (!currentFeed) return;
-
+  
     setIsSubscribing(true);
     try {
       const { userId } = await getCurrentUser();
-
-      // Create website first
-      const websiteResponse = await client.models.Website.create({
-        name: currentFeed.name,
-        url: currentFeed.type === 'GNEWS' ? 'https://gnews.io' : new URL(currentFeed.url).origin,
-        category: "news",
-        tags: currentFeed.tags
+  
+      // Since we now receive a complete feed from the backend,
+      // we only need to create the subscription
+      const existingSubscription = await client.models.UserFeedSubscription.list({
+        filter: {
+          feedId: { eq: currentFeed.id },
+          userId: { eq: userId }
+        }
       });
-
-      if (!websiteResponse.data) {
-        throw new Error('Failed to create website');
+  
+      if (!existingSubscription.data || existingSubscription.data.length === 0) {
+        // Create subscription only if it doesn't exist
+        await client.models.UserFeedSubscription.create({
+          feedId: currentFeed.id,
+          userId,
+          subscriptionDate: new Date().toISOString(),
+          notificationsEnabled: true
+        });
       }
-
-      // Create feed with GNews specific fields if present
-      const feedResponse = await client.models.Feed.create({
-        name: currentFeed.name,
-        url: currentFeed.url,
-        description: currentFeed.description,
-        type: currentFeed.type,
-        websiteId: websiteResponse.data.id,
-        tags: currentFeed.tags,
-        gNewsCategory: currentFeed.gNewsCategory as "general" | "world" | "nation" | "business" | "technology" | "entertainment" | "sports" | "science" | "health" | null | undefined,
-        gNewsCountry: currentFeed.gNewsCountry as "us" | "gb" | "au" | "ca" | "in" | null | undefined,
-        searchTerms: currentFeed.searchTerms
-      });
-
-      if (!feedResponse.data) {
-        throw new Error('Failed to create feed');
-      }
-
-      // Create subscription
-      await client.models.UserFeedSubscription.create({
-        feedId: feedResponse.data.id,
-        userId,
-        subscriptionDate: new Date().toISOString(),
-        notificationsEnabled: true
-      });
-
-      client.mutations.fetchGNews({
-        websiteId: websiteResponse.data.id,
-        feedId: feedResponse.data.id
-      })
-
+  
       setFeedDialog(false);
       setMessages(prev => [...prev, {
         text: `Successfully subscribed to "${currentFeed.name}". You can view it in your feeds section.`,

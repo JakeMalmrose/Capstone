@@ -79,6 +79,10 @@ function Feed() {
     }
   }
 
+  const processRssFeed = async () => {
+    // Empty method for Get Older Articles functionality
+  }
+
   const fetchFeedArticles = async () => {
     if (!feedId) return;
     setLoading(true);
@@ -185,11 +189,20 @@ function Feed() {
         <Stack direction="row" spacing={2}>
           <Button
             variant="contained"
+            onClick={processRssFeed}
+            disabled={fetchingNews}
+            startIcon={<NewsIcon />}
+          >
+            {fetchingNews ? 'Fetching...' : 'Get Older Articles'}
+          </Button>
+
+          <Button
+            variant="contained"
             onClick={fetchGNews}
             disabled={fetchingNews}
             startIcon={<NewsIcon />}
           >
-            {fetchingNews ? 'Fetching...' : 'Fetch GNews'}
+            {fetchingNews ? 'Fetching...' : 'Get new articles'}
           </Button>
 
           <Tooltip title="Refresh Articles">

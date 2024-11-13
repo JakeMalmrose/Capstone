@@ -1258,38 +1258,6 @@
             "PRO"
           ]
         },
-        "ChatWithLlmReturnTypeFeedSuggestionType": {
-          "name": "ChatWithLlmReturnTypeFeedSuggestionType",
-          "values": [
-            "RSS",
-            "GNEWS",
-            "OTHER"
-          ]
-        },
-        "ChatWithLlmReturnTypeFeedSuggestionGNewsCategory": {
-          "name": "ChatWithLlmReturnTypeFeedSuggestionGNewsCategory",
-          "values": [
-            "general",
-            "world",
-            "nation",
-            "business",
-            "technology",
-            "entertainment",
-            "sports",
-            "science",
-            "health"
-          ]
-        },
-        "ChatWithLlmReturnTypeFeedSuggestionGNewsCountry": {
-          "name": "ChatWithLlmReturnTypeFeedSuggestionGNewsCountry",
-          "values": [
-            "us",
-            "gb",
-            "au",
-            "ca",
-            "in"
-          ]
-        },
         "ProcessRssFeedReturnTypeFeedDataType": {
           "name": "ProcessRssFeedReturnTypeFeedDataType",
           "values": [
@@ -1309,12 +1277,10 @@
               "isRequired": false,
               "attributes": []
             },
-            "feedSuggestion": {
-              "name": "feedSuggestion",
+            "feed": {
+              "name": "feed",
               "isArray": false,
-              "type": {
-                "nonModel": "ChatWithLLMReturnTypeFeedSuggestion"
-              },
+              "type": "ID",
               "isRequired": false,
               "attributes": []
             }
@@ -1376,75 +1342,6 @@
               "name": "articles",
               "isArray": true,
               "type": "AWSJSON",
-              "isRequired": false,
-              "attributes": [],
-              "isArrayNullable": true
-            }
-          }
-        },
-        "ChatWithLLMReturnTypeFeedSuggestion": {
-          "name": "ChatWithLLMReturnTypeFeedSuggestion",
-          "fields": {
-            "name": {
-              "name": "name",
-              "isArray": false,
-              "type": "String",
-              "isRequired": false,
-              "attributes": []
-            },
-            "url": {
-              "name": "url",
-              "isArray": false,
-              "type": "String",
-              "isRequired": false,
-              "attributes": []
-            },
-            "description": {
-              "name": "description",
-              "isArray": false,
-              "type": "String",
-              "isRequired": false,
-              "attributes": []
-            },
-            "type": {
-              "name": "type",
-              "isArray": false,
-              "type": {
-                "enum": "ChatWithLlmReturnTypeFeedSuggestionType"
-              },
-              "isRequired": false,
-              "attributes": []
-            },
-            "gNewsCategory": {
-              "name": "gNewsCategory",
-              "isArray": false,
-              "type": {
-                "enum": "ChatWithLlmReturnTypeFeedSuggestionGNewsCategory"
-              },
-              "isRequired": false,
-              "attributes": []
-            },
-            "gNewsCountry": {
-              "name": "gNewsCountry",
-              "isArray": false,
-              "type": {
-                "enum": "ChatWithLlmReturnTypeFeedSuggestionGNewsCountry"
-              },
-              "isRequired": false,
-              "attributes": []
-            },
-            "searchTerms": {
-              "name": "searchTerms",
-              "isArray": true,
-              "type": "String",
-              "isRequired": false,
-              "attributes": [],
-              "isArrayNullable": true
-            },
-            "tags": {
-              "name": "tags",
-              "isArray": true,
-              "type": "String",
               "isRequired": false,
               "attributes": [],
               "isArrayNullable": true

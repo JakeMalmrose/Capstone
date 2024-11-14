@@ -120,6 +120,18 @@ const schema = a.schema({
     .handler(a.handler.function(gnewsFetchAll)),
 
   // Data Models
+  SpecialRequestPreset: a
+    .model({
+      name: a.string().required(),
+      content: a.string().required(),
+      description: a.string(),
+      isActive: a.boolean().required(),
+    })
+    .authorization((allow) => [
+      allow.authenticated(),//.to(['read']),
+      allow.groups(["Admin"]).to(['create', 'update', 'delete']),
+    ]),
+
   UserPreferences: a
   .model({
     userId: a.string().required(),

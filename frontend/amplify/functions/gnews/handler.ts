@@ -66,7 +66,9 @@ const fetchGNewsArticles = async function(
     // Build query parameters
     const queryParams: Record<string, string> = {
       apikey: apiKey,
-      lang: 'en'
+      lang: 'en',
+      expand: 'content',
+      nullable: 'image'
     };
 
     // Add parameters from feed if they exist

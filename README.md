@@ -42,14 +42,14 @@ The tool addresses the growing problem of information overload in the digital ag
   - Amplify for local CI/CD and testing
 
 ## Installation
-Visit https://news.malmrose.com
-Or to install yourself,
-cd frontend
-To simulate backend locally
-  npx ampx sandbox
-And to simulate frontend
-  npm run dev
-Both will auto update as you update the code.
+Visit https://news.malmrose.com  
+Or to install yourself,  
+cd frontend  
+To simulate backend locally  
+  npx ampx sandbox  
+And to simulate frontend  
+  npm run dev  
+Both will auto update as you update the code.  
 
 ## Usage
 Feel free to tinker with my stuff

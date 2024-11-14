@@ -31,18 +31,7 @@ interface ChatMessage {
   isUser: boolean;
 }
 
-interface Feed {
-  id: string;
-  name: string;
-  url: string;
-  description: string;
-  type: "RSS" | "GNEWS" | "OTHER";
-  tags?: string[];
-  gNewsCategory?: "general" | "world" | "nation" | "business" | "technology" | "entertainment" | "sports" | "science" | "health";
-  gNewsCountry?: "us" | "gb" | "au" | "ca" | "in";
-  searchTerms?: string[];
-  websiteId: string;
-}
+
 
 interface ChatResponse {
   response: string;
@@ -59,7 +48,7 @@ function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedDialog, setFeedDialog] = useState(false);
-  const [currentFeed, setCurrentFeed] = useState<Feed | null>(null);
+  const [currentFeed, setCurrentFeed] = useState<Schema["Feed"]["type"]>();
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isFetchingFeed, setIsFetchingFeed] = useState(false);
 
@@ -111,8 +100,7 @@ function Home() {
               
               if (feedResponse.data) {
                 console.log('Fetched feed:', feedResponse.data);
-                //amplify is error checking for fields being required when the chat-llm function returns this data
-                //@ts-ignore
+                
                 setCurrentFeed(feedResponse.data);
                 setFeedDialog(true);
               }

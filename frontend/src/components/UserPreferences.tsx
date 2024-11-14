@@ -16,25 +16,11 @@ import {
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { generateClient } from 'aws-amplify/api';
-
-interface Summarizer {
-  id: string;
-  name: string;
-  description?: string | null;
-  tier: 'FREE' | 'PRO' | null;
-}
-
-interface UserPreference {
-  id: string;
-  userId: string;
-  isPremium: boolean | null;
-  defaultSummarizerId: string | null;
-  specialRequests: string | null;
-  lastUpdated: string | null;
-}
-
-
 import type { Schema } from '../../amplify/data/resource';
+
+type UserPreference = Schema['UserPreferences']['type'];
+type SpecialRequestPreset = Schema['SpecialRequestPreset']['type'];
+type Summarizer = Schema['Summarizer']['type'];
 
 const client = generateClient<Schema>();
 
@@ -42,9 +28,11 @@ export default function UserPreferences() {
   const { user } = useAuthenticator();
   const [preferences, setPreferences] = useState<UserPreference | null>(null);
   const [summarizers, setSummarizers] = useState<Summarizer[]>([]);
+  const [specialRequestPresets, setSpecialRequestPresets] = useState<SpecialRequestPreset[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -62,16 +50,15 @@ export default function UserPreferences() {
           setPreferences(userPrefsResponse.data[0]);
         } else {
           // Create default preferences if none exist
-          const newPrefs = {
+          const newPrefs = await client.models.UserPreferences.create({
             userId: user.username,
             isPremium: false,
             defaultSummarizerId: '',
             specialRequests: '',
             lastUpdated: new Date().toISOString()
-          };
-          const createResponse = await client.models.UserPreferences.create(newPrefs);
-          if (createResponse.data) {
-            setPreferences(createResponse.data);
+          });
+          if (newPrefs.data) {
+            setPreferences(newPrefs.data);
           }
         }
 
@@ -79,6 +66,18 @@ export default function UserPreferences() {
         const summarizersList = await client.models.Summarizer.list();
         if (summarizersList.data) {
           setSummarizers(summarizersList.data);
+        }
+
+        // Load special request presets
+        const presetsResponse = await client.models.SpecialRequestPreset.list({
+          filter: {
+            isActive: {
+              eq: true
+            }
+          }
+        });
+        if (presetsResponse.data) {
+          setSpecialRequestPresets(presetsResponse.data);
         }
       } catch (error) {
         console.error('Error loading preferences:', error);
@@ -98,11 +97,7 @@ export default function UserPreferences() {
     setError(null);
     try {
       const updateResponse = await client.models.UserPreferences.update({
-        id: preferences.id,
-        userId: preferences.userId,
-        isPremium: preferences.isPremium,
-        defaultSummarizerId: preferences.defaultSummarizerId,
-        specialRequests: preferences.specialRequests,
+        ...preferences,
         lastUpdated: new Date().toISOString()
       });
 
@@ -114,6 +109,17 @@ export default function UserPreferences() {
       setError('Failed to save preferences. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePresetChange = (presetId: string) => {
+    setSelectedPreset(presetId);
+    const selectedPreset = specialRequestPresets.find(preset => preset.id === presetId);
+    if (selectedPreset && preferences) {
+      setPreferences({
+        ...preferences,
+        specialRequests: selectedPreset.content
+      });
     }
   };
 
@@ -205,6 +211,21 @@ export default function UserPreferences() {
                 <Typography variant="subtitle1" gutterBottom>
                   Special Requests
                 </Typography>
+                <Select
+                  fullWidth
+                  value={selectedPreset}
+                  onChange={(e) => handlePresetChange(e.target.value)}
+                  sx={{ mb: 2, bgcolor: 'background.paper' }}
+                >
+                  <MenuItem value="">
+                    <em>Select a preset</em>
+                  </MenuItem>
+                  {specialRequestPresets.map((preset) => (
+                    <MenuItem key={preset.id} value={preset.id}>
+                      {preset.name}
+                    </MenuItem>
+                  ))}
+                </Select>
                 <TextField
                   fullWidth
                   multiline

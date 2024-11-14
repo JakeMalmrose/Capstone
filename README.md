@@ -1,59 +1,59 @@
-# AI-Powered Content Summarization Tool
+# NEWSBITES
 
 ## Description
 
-This project is a web-based content summarization tool that leverages artificial intelligence to simplify online reading. Users can input a URL of a news article or web page, and the application will automatically extract and summarize the content into a concise, easy-to-read format.
+Newsbites is a web-based content summarization tool that leverages artificial intelligence to simplify online reading. Users can chat with an AI to discover and create feeds, then view those feeds in a simple condensed format.
 
-The tool addresses the growing problem of information overload in the digital age by saving time, improving information retention, and making complex content more accessible to a wider audience.
+The tool addresses the growing problem of information overload in the digital age by saving time, improving information retention, and making complex content more accessible to a wider audience. It allows you to consume news the way you want it, at the speed you want it.
 
 ## Features
 
-- User-friendly web interface for URL input and summary display
-- Robust web crawler for content extraction from various news websites
+- User-friendly web interface for feed creation and summary display
 - Local Large Language Model (LLM) integration for enhanced privacy and faster processing
 - Intelligent summarization algorithms
 - User authentication system
 - Error handling and user-friendly messages
 - Database integration for storing user data and system logs
+- Customization of feeds
+- User preferences
 
 ## Tech Stack
-# Implemented:
-
-# Unimplemented:
 - Frontend:
   - React.js with TypeScript
   - Redux for state management
   - Material-UI for design components
 - Backend:
-  - Node.js with Express
+  - Amplify
   - RESTful API design
+  - Lambda functions
 - Database:
-  - DynamoDB
+  - DynamoDB+GraphQL
 - LLM:
-  - Local installation of BLOOM or GPT-J
-  - Cloud API with custom prompting using GPT-4 or Anthropic Claude
-- Web Crawling:
-  - Puppeteer for dynamic content extraction
-  - Cheerio for static HTML parsing
+  - Local installation of Llama
+  - Cloud API wrappers of Anthropic and OpenAI
 - Authentication:
-  - JSON Web Tokens (JWT)
-  - Bcrypt for password hashing
+  - Amplify Auth
+  - Cognito User Pools
 - Hosting and Deployment:
   - Docker for containerization
   - AWS for cloud hosting
 - Version Control and CI/CD:
   - Git and GitHub
-  - GitHub Actions for CI/CD
-- Testing:
-  - Jest for unit and integration testing
-  - Cypress for end-to-end testing
+  - Amplify for local CI/CD and testing
 
 ## Installation
-
+Visit https://news.malmrose.com
+Or to install yourself,
+cd frontend
+To simulate backend locally
+  npx ampx sandbox
+And to simulate frontend
+  npm run dev
+Both will auto update as you update the code.
 
 ## Usage
-
+Feel free to tinker with my stuff
 
 ## Contributing
 
-No contributions accepted yet, but feedback is welcome.
+Make a pull request or add a report

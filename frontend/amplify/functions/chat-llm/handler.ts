@@ -135,11 +135,11 @@ interface NewFeed {
     name: string;
     description: string;
     type: string;
-    gNewsCategory: "general" | "world" | "nation" | "business" | "technology" | "entertainment" | "sports" | "science" | "health";
-    gNewsCountry: "us" | "gb" | "au" | "ca" | "in";
+    gNewsCategory: Schema["Feed"]["type"]["gNewsCategory"];
+    gNewsCountry: Schema["Feed"]["type"]["gNewsCountry"];
     searchTerms: string[];
     tags: string[];
-  };
+  }
 }
 
 const searchForFeeds = async (searchTerm: string) => {
@@ -177,12 +177,9 @@ const searchForFeeds = async (searchTerm: string) => {
 const createFeed = async (feedData: NewFeed['feed']) => {
   console.log('Attempting to create new feed with data:', feedData);
   try {
-    const result = await client.models.Feed.create({
-      ...feedData,
-      type: feedData.type as "RSS" | "GNEWS" | "OTHER" | null | undefined,
-      url: "gnews://",
-      websiteId: ""
-    });
+    const websiteId = await createOrGetGnewsWebsiteId();
+    const completeFeedData = { ...feedData, websiteId, url: 'gnews://', type: 'GNEWS' as const };
+    const result = await client.models.Feed.create(completeFeedData);
     console.log('Feed creation result:', result);
     return result;
   } catch (error) {
@@ -190,6 +187,32 @@ const createFeed = async (feedData: NewFeed['feed']) => {
     throw error;
   }
 };
+
+const createOrGetGnewsWebsiteId = async () => {
+  try {
+    const websiteResponse = await client.models.Website.list({
+      filter: {
+        name: { eq: 'GNews' }
+      }
+    });
+    if (websiteResponse.data.length > 0) {
+      return websiteResponse.data[0].id;
+    }
+    const newWebsite = await client.models.Website.create({
+      name: 'GNews',
+      url: 'gnews://',
+      category: 'News',
+      tags: ['news', 'gnews']
+    });
+    if(!newWebsite.data) {
+      throw new Error('Failed to create GNews website');
+    }
+    return newWebsite.data.id;
+  } catch (error) {
+    console.error('Error creating or getting GNews website:', error);
+    throw error;
+  }
+}
 
 const processLLMResponse = (response: string) => {
   console.log('Processing LLM response:', response);

@@ -37,6 +37,7 @@ import AdminWebsites from './components/admin/AdminWebsites';
 import AdminEditFeeds from './components/admin/AdminEditFeeds';
 import AdminAllFeeds from './components/admin/AdminAllFeeds';
 import AdminEditSummarizers from './components/admin/AdminEditSummarizers';
+import AdminSpecialRequestPresets from './components/admin/AdminSpecialRequestPresets';
 import WebsiteFeeds from './components/WebsiteFeeds';
 import WebsiteList from './components/WebsiteList';
 import Home from './components/Home';
@@ -230,6 +231,7 @@ function App() {
                       <Route path="/admin/editFeeds/:websiteId" element={<AdminEditFeeds />} />
                       <Route path="/admin/allFeeds" element={<AdminAllFeeds />} />
                       <Route path="/admin/editSummarizers" element={<AdminEditSummarizers />} />
+                      <Route path="/admin/special-request-presets" element={<AdminSpecialRequestPresets />} />
                     </>
                   )}
                 </Routes>

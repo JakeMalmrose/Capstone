@@ -137,7 +137,7 @@ function AdminPortal() {
         <Typography variant="h2" component="h1">
           Admin Dashboard
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <Button
             component={Link}
             to="/admin/websites"
@@ -176,6 +176,19 @@ function AdminPortal() {
             }}
           >
             Manage Summarizers
+          </Button>
+          <Button
+            component={Link}
+            to="/admin/special-request-presets"
+            variant="contained"
+            sx={{ 
+              backgroundColor: 'primary.main',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              }
+            }}
+          >
+            Special Request Presets
           </Button>
           <Button
             onClick={handleFetchAllNews}

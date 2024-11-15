@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
+import FeedbackForm from './FeedbackForm';
 import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
@@ -52,6 +53,7 @@ function UnreadArticles() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFullText, setShowFullText] = useState(false);
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
 
   // Initialize app - load user preferences and summarizer
   useEffect(() => {
@@ -318,9 +320,18 @@ function UnreadArticles() {
         }}
       >
         <CardContent>
-          <Typography variant="h5" component="h2" gutterBottom>
-            {currentArticle.title}
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+            <Typography variant="h5" component="h2" gutterBottom>
+              {currentArticle.title}
+            </Typography>
+            <Button
+              variant="outlined"
+              onClick={() => setShowFeedbackForm(true)}
+              sx={{ ml: 2 }}
+            >
+              Submit Feedback
+            </Button>
+          </Box>
 
           <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
             Published: {currentArticle.createdAt ? new Date(currentArticle.createdAt).toLocaleDateString() : 'Unknown'}
@@ -393,6 +404,16 @@ function UnreadArticles() {
 
         </CardContent>
       </Card>
+
+      <FeedbackForm
+        open={showFeedbackForm}
+        onClose={() => setShowFeedbackForm(false)}
+        article={{
+          id: currentArticle.id,
+          title: currentArticle.title,
+          url: currentArticle.url
+        }}
+      />
     </Box>
   );
 }

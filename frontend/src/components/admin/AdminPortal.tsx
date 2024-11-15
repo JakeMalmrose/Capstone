@@ -191,6 +191,19 @@ function AdminPortal() {
             Special Request Presets
           </Button>
           <Button
+            component={Link}
+            to="/admin/feedback"
+            variant="contained"
+            sx={{ 
+              backgroundColor: 'primary.main',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              }
+            }}
+          >
+            Manage Feedback
+          </Button>
+          <Button
             onClick={handleFetchAllNews}
             disabled={fetchingNews}
             variant="contained"

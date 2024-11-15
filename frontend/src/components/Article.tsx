@@ -16,6 +16,7 @@ import {
   Button,
   Divider
 } from '@mui/material';
+import FeedbackForm from './FeedbackForm';
 import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
@@ -33,6 +34,7 @@ function Article() {
   const [summarizers, setSummarizers] = useState<Schema['Summarizer']['type'][]>([]);
   const [selectedSummarizerId, setSelectedSummarizerId] = useState<string>('');
   const [showFullText, setShowFullText] = useState(false);
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
   const [summaryState, setSummaryState] = useState<SummaryState>({
     text: '',
     loading: false,
@@ -200,9 +202,18 @@ function Article() {
               }
             }}
           >
-            <Typography variant="h4" component="h1" gutterBottom>
-              {article.title}
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+              <Typography variant="h4" component="h1" gutterBottom>
+                {article.title}
+              </Typography>
+              <Button
+                variant="outlined"
+                onClick={() => setShowFeedbackForm(true)}
+                sx={{ ml: 2 }}
+              >
+                Submit Feedback
+              </Button>
+            </Box>
             
             <Typography variant="subtitle1" color="text.secondary" gutterBottom>
               Published: {article.createdAt ? new Date(article.createdAt).toLocaleDateString() : 'Unknown'}
@@ -280,6 +291,16 @@ function Article() {
           </Paper>
         </Grid>
       </Grid>
+
+      <FeedbackForm
+        open={showFeedbackForm}
+        onClose={() => setShowFeedbackForm(false)}
+        article={{
+          id: article.id,
+          title: article.title,
+          url: article.url
+        }}
+      />
     </Box>
   );
 }

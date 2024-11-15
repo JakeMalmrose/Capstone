@@ -120,6 +120,25 @@ const schema = a.schema({
     .handler(a.handler.function(gnewsFetchAll)),
 
   // Data Models
+  Feedback: a
+    .model({
+      type: a.enum(["BUG", "FEEDBACK"]),
+      status: a.enum(["NEW", "IN_PROGRESS", "RESOLVED"]),
+      title: a.string().required(),
+      description: a.string().required(),
+      userId: a.string().required(),
+      articleId: a.string(),
+      articleTitle: a.string(),
+      articleUrl: a.string(),
+      adminNotes: a.string(),
+      resolvedAt: a.datetime(),
+    })
+    .authorization((allow) => [
+      allow.owner(),
+      allow.authenticated().to(["read", "create"]),
+      allow.groups(["Admin"]).to(['read', 'create', 'update', 'delete']),
+    ]),
+
   SpecialRequestPreset: a
     .model({
       name: a.string().required(),

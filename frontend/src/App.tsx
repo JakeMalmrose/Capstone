@@ -70,7 +70,6 @@ function App() {
         setIsAdmin(false);
       } finally {
         setLoading(false);
-        setIsAdmin(true);
       }
     }
 

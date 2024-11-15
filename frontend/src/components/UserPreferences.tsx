@@ -50,13 +50,15 @@ export default function UserPreferences() {
           setPreferences(userPrefsResponse.data[0]);
         } else {
           // Create default preferences if none exist
-          const newPrefs = await client.models.UserPreferences.create({
+          const defaultPrefs = {
             userId: user.username,
             isPremium: false,
             defaultSummarizerId: '',
             specialRequests: '',
             lastUpdated: new Date().toISOString()
-          });
+          };
+          
+          const newPrefs = await client.models.UserPreferences.create(defaultPrefs);
           if (newPrefs.data) {
             setPreferences(newPrefs.data);
           }
@@ -87,19 +89,34 @@ export default function UserPreferences() {
       }
     };
 
-    loadData();
-  }, [user]);
+    if (user?.username) {
+      loadData();
+    }
+  }, [user?.username]);
 
   const handleSave = async () => {
-    if (!preferences) return;
+    if (!preferences?.id) {
+      setError('Invalid preferences data');
+      return;
+    }
     
     setSaving(true);
     setError(null);
+    
     try {
-      const updateResponse = await client.models.UserPreferences.update({
-        ...preferences,
+      // Prepare update data by only including fields defined in the schema
+      const updateData = {
+        id: preferences.id,
+        userId: preferences.userId,
+        isPremium: preferences.isPremium ?? false,
+        defaultSummarizerId: preferences.defaultSummarizerId || '',
+        specialRequests: preferences.specialRequests || '',
+        gNewsCountry: preferences.gNewsCountry,
+        gNewsCategory: preferences.gNewsCategory,
         lastUpdated: new Date().toISOString()
-      });
+      };
+
+      const updateResponse = await client.models.UserPreferences.update(updateData);
 
       if (updateResponse.data) {
         setPreferences(updateResponse.data);
@@ -121,6 +138,16 @@ export default function UserPreferences() {
         specialRequests: selectedPreset.content
       });
     }
+  };
+
+  const handlePreferenceChange = <K extends keyof UserPreference>(
+    key: K,
+    value: UserPreference[K]
+  ) => {
+    setPreferences(prev => prev ? {
+      ...prev,
+      [key]: value
+    } : null);
   };
 
   if (loading) {
@@ -170,10 +197,7 @@ export default function UserPreferences() {
                   control={
                     <Switch
                       checked={preferences?.isPremium || false}
-                      onChange={(e) => setPreferences(prev => prev ? {
-                        ...prev,
-                        isPremium: e.target.checked
-                      } : null)}
+                      onChange={(e) => handlePreferenceChange('isPremium', e.target.checked)}
                       color="primary"
                     />
                   }
@@ -189,10 +213,7 @@ export default function UserPreferences() {
                 <Select
                   fullWidth
                   value={preferences?.defaultSummarizerId || ''}
-                  onChange={(e) => setPreferences(prev => prev ? {
-                    ...prev,
-                    defaultSummarizerId: e.target.value
-                  } : null)}
+                  onChange={(e) => handlePreferenceChange('defaultSummarizerId', e.target.value)}
                   sx={{ bgcolor: 'background.paper' }}
                 >
                   <MenuItem value="">
@@ -231,10 +252,7 @@ export default function UserPreferences() {
                   multiline
                   rows={4}
                   value={preferences?.specialRequests || ''}
-                  onChange={(e) => setPreferences(prev => prev ? {
-                    ...prev,
-                    specialRequests: e.target.value
-                  } : null)}
+                  onChange={(e) => handlePreferenceChange('specialRequests', e.target.value)}
                   placeholder="Enter any special requests for AI responses..."
                   sx={{ bgcolor: 'background.paper' }}
                 />

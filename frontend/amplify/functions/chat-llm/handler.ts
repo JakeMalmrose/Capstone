@@ -145,7 +145,6 @@ interface NewFeed {
 const searchForFeeds = async (searchTerm: string) => {
   console.log('Starting feed search with term:', searchTerm);
   try {
-    // Search in both title and searchTerms
     const [titleResults, termResults] = await Promise.all([
       client.models.Feed.list({
         filter: {
@@ -159,10 +158,6 @@ const searchForFeeds = async (searchTerm: string) => {
       })
     ]);
 
-    console.log('Title search results:', titleResults.data);
-    console.log('Term search results:', termResults.data);
-
-    // Combine and deduplicate results
     const allFeeds = [...(titleResults.data || []), ...(termResults.data || [])];
     const uniqueFeeds = Array.from(new Map(allFeeds.map(feed => [feed.id, feed])).values());
     
@@ -211,6 +206,65 @@ const createOrGetGnewsWebsiteId = async () => {
   } catch (error) {
     console.error('Error creating or getting GNews website:', error);
     throw error;
+  }
+}
+
+async function handleLLMResponse(
+  response: string,
+  messages: LLMMessage[]
+): Promise<{ response: string; feed: string | null }> {
+  const processed = processLLMResponse(response);
+  console.log('Processing response type:', processed.type);
+
+  switch (processed.type) {
+    case 'search': {
+      console.log('Handling search response');
+      const searchResults = await searchForFeeds(processed.data.searchTerm);
+      
+      messages.push({
+        role: 'assistant',
+        content: response
+      });
+      messages.push({
+        role: 'system',
+        content: `Search results: ${JSON.stringify(searchResults)}`
+      });
+      
+      const nextResponse = await openClient.generateResponse(messages, {
+        model: 'gpt-4-turbo-preview',
+        temperature: 0.7,
+        maxTokens: 800
+      });
+      
+      // Recursively handle the next response
+      return handleLLMResponse(nextResponse, messages);
+    }
+    
+    case 'selection': {
+      console.log('Handling feed selection');
+      return {
+        response: processed.data.response,
+        feed: processed.data.feedId
+      };
+    }
+    
+    case 'creation': {
+      console.log('Handling feed creation');
+      const newFeed = await createFeed(processed.data.feed);
+      return {
+        response: processed.data.response,
+        feed: newFeed.data ? newFeed.data.id : null
+      };
+    }
+    
+    case 'conversation':
+    default: {
+      console.log('Handling conversation response');
+      return {
+        response: processed.data.response,
+        feed: null
+      };
+    }
   }
 }
 
@@ -269,110 +323,30 @@ export const handler: Schema["chatWithLLM"]["functionHandler"] = async (event): 
   try {
     const messages = chatHistory as LLMMessage[];
 
-    // Ensure system message is present
     if (!messages.some(msg => msg.role === 'system')) {
-      console.log('Adding system prompt to messages');
       messages.unshift({
         role: 'system',
         content: SYSTEM_PROMPT
       });
     }
 
-    // Add the new message to history
     messages.push({
       role: 'user',
       content: message
     });
 
-    console.log('Getting initial response from LLM');
-    // Get initial response from LLM
     const initialResponse = await openClient.generateResponse(messages, {
       model: 'gpt-4-turbo-preview',
       temperature: 0.7,
       maxTokens: 800
     });
 
-    console.log('Initial LLM response:', initialResponse);
-
-    // Process the response
-    const processedResponse = processLLMResponse(initialResponse);
-    console.log('Processed response type:', processedResponse.type);
-
-    // Handle different response types
-    switch (processedResponse.type) {
-      case 'search': {
-        console.log('Handling search response');
-        // Perform search and add results to conversation
-        const searchResults = await searchForFeeds(processedResponse.data.searchTerm);
-        console.log('Search results:', searchResults);
-        
-        // Add search results to conversation and get next response
-        messages.push({
-          role: 'assistant',
-          content: initialResponse
-        });
-        messages.push({
-          role: 'system',
-          content: `Search results: ${JSON.stringify(searchResults)}`
-        });
-        
-        console.log('Getting next response from LLM');
-        const nextResponse = await openClient.generateResponse(messages, {
-          model: 'gpt-4-turbo-preview',
-          temperature: 0.7,
-          maxTokens: 800
-        });
-        
-        console.log('Next LLM response:', nextResponse);
-        const finalProcessed = processLLMResponse(nextResponse);
-        console.log('Final processed response type:', finalProcessed.type);
-        
-        // Handle feed selection or creation
-        if (finalProcessed.type === 'selection') {
-          const selectedFeed = searchResults.find(feed => feed.id === finalProcessed.data.feedId);
-          console.log('Selected feed:', selectedFeed);
-          return {
-            response: finalProcessed.data.response,
-            feed: selectedFeed ? selectedFeed.id : null
-          };
-        } else if (finalProcessed.type === 'creation') {
-          console.log('Creating new feed');
-          const newFeed = await createFeed(finalProcessed.data.feed);
-          console.log('New feed created:', newFeed);
-          return {
-            response: finalProcessed.data.response,
-            feed: newFeed.data ? newFeed.data.id : null
-          };
-        }
-        break;
-      }
-      
-      case 'selection':
-      case 'creation': {
-        // Handle direct selection or creation (shouldn't normally happen)
-        console.warn('Received direct selection/creation without search step');
-        return {
-          response: processedResponse.data.response,
-          feed: null
-        };
-      }
-      
-      case 'conversation':
-      default: {
-        // Regular conversation response
-        console.log('Returning conversation response');
-        return {
-          response: processedResponse.data.response,
-          feed: null
-        };
-      }
-    }
-
-    // Fallback response if something unexpected happened
-    console.warn('Reached fallback response');
+    // Use the new handleLLMResponse function to process the response
+    const result = await handleLLMResponse(initialResponse, messages);
+    
     return {
-      response: "I apologize, but I encountered an unexpected situation. Please try your request again.",
-      feed: null
+      response: result.response,
+      feed: result.feed
     };
 
   } catch (error: any) {

@@ -5,7 +5,7 @@ export class LocalClient implements LLMClient {
     private openai: OpenAI;
     
     constructor() {
-      this.openai = new OpenAI({ baseURL: 'http://174.23.157.51:8000/v1' });
+      this.openai = new OpenAI({ baseURL: 'http://174.23.129.232:8000/v1' });
     }
   
     async generateResponse(messages: LLMMessage[], config: LLMConfig = { model: 'hermes-3-llama-3.1-8b' }): Promise<string> {

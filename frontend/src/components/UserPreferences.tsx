@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthenticator } from '@aws-amplify/ui-react';
+import { loadStripe } from '@stripe/stripe-js';
 import { 
   Typography, 
   Box, 
@@ -12,17 +13,28 @@ import {
   TextField,
   Button,
   CircularProgress,
-  Alert
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
 import { generateClient } from 'aws-amplify/api';
 import type { Schema } from '../../amplify/data/resource';
+
+// Initialize Stripe - replace with your publishable key
+const stripePromise = loadStripe('pk_live_51QLqQbA1lmpQFQfrmLGOCtdWWknSWupGMA4YHnueQx2Nvy8nvEZMsmFJwAVP7OEjNcbYdXnJqdz2QaKI0xKdt6JR00botja8MB');
 
 type UserPreference = Schema['UserPreferences']['type'];
 type SpecialRequestPreset = Schema['SpecialRequestPreset']['type'];
 type Summarizer = Schema['Summarizer']['type'];
 
 const client = generateClient<Schema>();
+
+const PREMIUM_PRICE = 9.99; // Monthly subscription price
 
 export default function UserPreferences() {
   const { user } = useAuthenticator();
@@ -33,6 +45,8 @@ export default function UserPreferences() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<string>('');
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -104,7 +118,6 @@ export default function UserPreferences() {
     setError(null);
     
     try {
-      // Prepare update data by only including fields defined in the schema
       const updateData = {
         id: preferences.id,
         userId: preferences.userId,
@@ -144,11 +157,70 @@ export default function UserPreferences() {
     key: K,
     value: UserPreference[K]
   ) => {
+    if (key === 'isPremium' && !preferences?.isPremium && value === true) {
+      setPaymentDialogOpen(true);
+      return;
+    }
+    
     setPreferences(prev => prev ? {
       ...prev,
       [key]: value
     } : null);
   };
+
+  const handlePaymentStart = async () => {
+    setProcessingPayment(true);
+    try {
+      // Create checkout session using Amplify API
+      const response = await client.mutations.createStripeCheckout({
+        priceId: 'price_1QLrjwA1lmpQFQfrTzzhxLEF', // You can hardcode this or pass it as an env variable
+        userId: user.username
+      });
+  
+      if (response.data?.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = response.data.url;
+      } else {
+        throw new Error('No checkout URL received');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      setError('Payment processing failed. Please try again.');
+      setProcessingPayment(false);
+    }
+  };
+  
+  // Add this useEffect to handle redirect back from Stripe
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const sessionId = searchParams.get('session_id');
+    
+    if (sessionId) {
+      // Clear the URL parameter
+      window.history.replaceState({}, '', window.location.pathname);
+      
+      // Reload the user preferences to get updated premium status
+      const loadData = async () => {
+        try {
+          const userPrefsResponse = await client.models.UserPreferences.list({
+            filter: {
+              userId: {
+                eq: user.username
+              }
+            }
+          });
+  
+          if (userPrefsResponse.data && userPrefsResponse.data.length > 0) {
+            setPreferences(userPrefsResponse.data[0]);
+          }
+        } catch (error) {
+          console.error('Error reloading preferences:', error);
+        }
+      };
+  
+      loadData();
+    }
+  }, [user?.username]);
 
   if (loading) {
     return (
@@ -191,21 +263,35 @@ export default function UserPreferences() {
             )}
 
             <Grid container spacing={3}>
-              {/* Premium Toggle */}
+              {/* Premium Status */}
               <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={preferences?.isPremium || false}
-                      onChange={(e) => handlePreferenceChange('isPremium', e.target.checked)}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={preferences?.isPremium || false}
+                        onChange={(e) => handlePreferenceChange('isPremium', e.target.checked)}
+                        color="primary"
+                        disabled={!preferences?.isPremium}
+                      />
+                    }
+                    label="Premium User"
+                  />
+                  {!preferences?.isPremium && (
+                    <Button
+                      variant="contained"
                       color="primary"
-                    />
-                  }
-                  label="Premium User"
-                />
+                      startIcon={<CreditCardIcon />}
+                      onClick={() => setPaymentDialogOpen(true)}
+                      sx={{ ml: 2 }}
+                    >
+                      Upgrade to Premium
+                    </Button>
+                  )}
+                </Box>
               </Grid>
 
-              {/* Default Summarizer */}
+              {/* Rest of the existing preferences remain the same */}
               <Grid item xs={12}>
                 <Typography variant="subtitle1" gutterBottom>
                   Default Summarizer
@@ -227,7 +313,6 @@ export default function UserPreferences() {
                 </Select>
               </Grid>
 
-              {/* Special Requests */}
               <Grid item xs={12}>
                 <Typography variant="subtitle1" gutterBottom>
                   Special Requests
@@ -258,7 +343,6 @@ export default function UserPreferences() {
                 />
               </Grid>
 
-              {/* Save Button */}
               <Grid item xs={12}>
                 <Button
                   variant="contained"
@@ -266,12 +350,6 @@ export default function UserPreferences() {
                   onClick={handleSave}
                   disabled={saving || !preferences}
                   startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
-                  sx={{ 
-                    transition: 'transform 0.2s ease-in-out',
-                    '&:hover': {
-                      transform: 'scale(1.02)',
-                    }
-                  }}
                 >
                   {saving ? 'Saving...' : 'Save Preferences'}
                 </Button>
@@ -280,6 +358,39 @@ export default function UserPreferences() {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Payment Dialog */}
+      <Dialog open={paymentDialogOpen} onClose={() => !processingPayment && setPaymentDialogOpen(false)}>
+        <DialogTitle>Upgrade to Premium</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Upgrade to premium for ${PREMIUM_PRICE}/month to unlock all features:
+            <Box component="ul" sx={{ mt: 1 }}>
+              <li>Access to all summarizers</li>
+              <li>Unlimited article summaries</li>
+              <li>Custom summarization styles</li>
+              <li>Priority support</li>
+            </Box>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setPaymentDialogOpen(false)} 
+            disabled={processingPayment}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handlePaymentStart}
+            disabled={processingPayment}
+            startIcon={processingPayment ? <CircularProgress size={20} /> : <CreditCardIcon />}
+          >
+            {processingPayment ? 'Processing...' : `Subscribe for $${PREMIUM_PRICE}/month`}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

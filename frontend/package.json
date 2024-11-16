@@ -11,12 +11,15 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.1",
+    "@aws-amplify/cli": "latest",
     "@aws-amplify/ui-react": "^6.5.2",
     "@aws-amplify/ui-vue": "^4.2.19",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@mui/icons-material": "^6.1.5",
     "@mui/material": "^6.1.5",
+    "@stripe/react-stripe-js": "^2.9.0",
+    "@stripe/stripe-js": "^4.10.0",
     "@types/jsdom": "^21.1.7",
     "anthropic": "^0.0.0",
     "aws-amplify": "^6.5.2",
@@ -29,7 +32,7 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.26.2",
     "rss-parser": "^3.13.0",
-    "@aws-amplify/cli": "latest"
+    "stripe": "^17.3.1"
   },
   "devDependencies": {
     "@aws-amplify/backend": "^1.1.1",

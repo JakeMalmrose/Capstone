@@ -5,6 +5,8 @@ import { processRssFeed } from "../functions/rss-parser/resource";
 import { fetchGNews } from "../functions/gnews/resource";
 import { chatWithLLM } from "../functions/chat-llm/resource";
 import { gnewsFetchAll } from "../functions/gnewsFetchAll/resource";
+import { createCheckoutSession } from "../functions/stripe/create-session/resource";
+import { handleStripeWebhook } from "../functions/stripe/webhook/resource";
 
 const feedDataType = a.customType({
   name: a.string(),
@@ -37,6 +39,31 @@ const chatResponseType = a.customType({
 
 const schema = a.schema({
   // Functions
+  createStripeCheckout: a
+    .mutation()
+    .arguments({
+      priceId: a.string().required(),
+      userId: a.string().required(),
+    })
+    .returns(
+      a.customType({
+        sessionId: a.string(),
+        url: a.string(),
+      })
+    )
+    .authorization((allow) => [allow.authenticated()])
+    .handler(a.handler.function(createCheckoutSession)),
+
+  stripeWebhook: a
+    .mutation()
+    .arguments({
+      signature: a.string().required(),
+      payload: a.string().required(),
+    })
+    .returns(a.boolean())
+    .authorization((allow) => [allow.guest(), allow.publicApiKey()])
+    .handler(a.handler.function(handleStripeWebhook)),
+
   chatWithLLM: a
     .query()
     .arguments({

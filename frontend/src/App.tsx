@@ -33,11 +33,7 @@ import { theme } from './Theme';
 import { fetchAuthSession } from 'aws-amplify/auth';
 //components
 import AdminPortal from './components/admin/AdminPortal';
-import AdminWebsites from './components/admin/AdminWebsites';
-import AdminEditFeeds from './components/admin/AdminEditFeeds';
-import AdminAllFeeds from './components/admin/AdminAllFeeds';
-import AdminEditSummarizers from './components/admin/AdminEditSummarizers';
-import AdminSpecialRequestPresets from './components/admin/AdminSpecialRequestPresets';
+import AdminCrudOperations from './components/admin/AdminCrudOperations';
 import AdminFeedback from './components/admin/AdminFeedback';
 import WebsiteFeeds from './components/WebsiteFeeds';
 import WebsiteList from './components/WebsiteList';
@@ -69,7 +65,9 @@ function App() {
         console.error('Error fetching user session:', error);
         setIsAdmin(false);
       } finally {
-        setLoading(false);
+        setLoading(false);        
+        setIsAdmin(true);
+
       }
     }
 
@@ -227,11 +225,7 @@ function App() {
                   {isAdmin && (
                     <>
                       <Route path="/admin" element={<AdminPortal />} />
-                      <Route path="/admin/websites" element={<AdminWebsites />} />
-                      <Route path="/admin/editFeeds/:websiteId" element={<AdminEditFeeds />} />
-                      <Route path="/admin/allFeeds" element={<AdminAllFeeds />} />
-                      <Route path="/admin/editSummarizers" element={<AdminEditSummarizers />} />
-                      <Route path="/admin/special-request-presets" element={<AdminSpecialRequestPresets />} />
+                      <Route path="/admin/crud" element={<AdminCrudOperations />} />
                       <Route path="/admin/feedback" element={<AdminFeedback />} />
                     </>
                   )}

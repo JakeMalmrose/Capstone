@@ -125,6 +125,7 @@ function AdminPortal() {
       </Box>
     );
   }
+
   return (
     <Box sx={{ p: 2 }}>
       {error && (
@@ -140,66 +141,17 @@ function AdminPortal() {
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <Button
             component={Link}
-            to="/admin/websites"
+            to="/admin/crud"
             variant="contained"
-            sx={{ 
-              backgroundColor: 'primary.main',
-              '&:hover': {
-                backgroundColor: 'primary.dark',
-              }
-            }}
+            color="primary"
           >
-            Manage Websites
-          </Button>
-          <Button
-            component={Link}
-            to="/admin/allFeeds"
-            variant="contained"
-            sx={{ 
-              backgroundColor: 'primary.main',
-              '&:hover': {
-                backgroundColor: 'primary.dark',
-              }
-            }}
-          >
-            Manage Feeds
-          </Button>
-          <Button
-            component={Link}
-            to="/admin/editSummarizers"
-            variant="contained"
-            sx={{ 
-              backgroundColor: 'primary.main',
-              '&:hover': {
-                backgroundColor: 'primary.dark',
-              }
-            }}
-          >
-            Manage Summarizers
-          </Button>
-          <Button
-            component={Link}
-            to="/admin/special-request-presets"
-            variant="contained"
-            sx={{ 
-              backgroundColor: 'primary.main',
-              '&:hover': {
-                backgroundColor: 'primary.dark',
-              }
-            }}
-          >
-            Special Request Presets
+            Manage Resources
           </Button>
           <Button
             component={Link}
             to="/admin/feedback"
             variant="contained"
-            sx={{ 
-              backgroundColor: 'primary.main',
-              '&:hover': {
-                backgroundColor: 'primary.dark',
-              }
-            }}
+            color="primary"
           >
             Manage Feedback
           </Button>
@@ -207,19 +159,11 @@ function AdminPortal() {
             onClick={handleFetchAllNews}
             disabled={fetchingNews}
             variant="contained"
-            sx={{ 
-              backgroundColor: 'primary.main',
-              '&:hover': {
-                backgroundColor: 'primary.dark',
-              }
-            }}
+            color="primary"
           >
             {fetchingNews ? 'Fetching News...' : 'Fetch All News'}
           </Button>
         </Box>
-      </Box>
-
-      <Box sx={{ mt: 4 }}>
       </Box>
 
       <Box sx={{ mt: 4 }}>

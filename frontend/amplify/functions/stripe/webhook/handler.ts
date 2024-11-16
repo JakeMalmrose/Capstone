@@ -12,10 +12,11 @@ const client = generateClient<Schema>();
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    
+    console.log("beginning webhook handler");
     const signature = event.headers['stripe-signature'];
     
     if (!signature) {
+      console.log("no signature found");
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'No signature found' }),

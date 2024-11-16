@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { loadStripe } from '@stripe/stripe-js';
+//import { loadStripe } from '@stripe/stripe-js';
 import { 
   Typography, 
   Box, 
@@ -26,7 +26,7 @@ import { generateClient } from 'aws-amplify/api';
 import type { Schema } from '../../amplify/data/resource';
 
 // Initialize Stripe - replace with your publishable key
-const stripePromise = loadStripe('pk_live_51QLqQbA1lmpQFQfrmLGOCtdWWknSWupGMA4YHnueQx2Nvy8nvEZMsmFJwAVP7OEjNcbYdXnJqdz2QaKI0xKdt6JR00botja8MB');
+//const stripePromise = loadStripe('pk_live_51QLqQbA1lmpQFQfrmLGOCtdWWknSWupGMA4YHnueQx2Nvy8nvEZMsmFJwAVP7OEjNcbYdXnJqdz2QaKI0xKdt6JR00botja8MB');
 
 type UserPreference = Schema['UserPreferences']['type'];
 type SpecialRequestPreset = Schema['SpecialRequestPreset']['type'];

@@ -12,6 +12,7 @@ const client = generateClient<Schema>();
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
+    
     const signature = event.headers['stripe-signature'];
     
     if (!signature) {
@@ -26,6 +27,13 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET || ''
     );
+
+    console.log('Webhook event received:', {
+      type: stripeEvent.type,
+      id: stripeEvent.id,
+      timestamp: new Date(stripeEvent.created * 1000).toISOString(),
+      data: JSON.stringify(stripeEvent.data.object)
+    });
 
     switch (stripeEvent.type) {
       case 'checkout.session.completed': {
@@ -83,6 +91,12 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       }
     }
 
+    console.log('Webhook processed successfully:', {
+      type: stripeEvent.type,
+      id: stripeEvent.id,
+      premium: stripeEvent.type === 'checkout.session.completed'
+    });
+    
     return {
       statusCode: 200,
       headers: {

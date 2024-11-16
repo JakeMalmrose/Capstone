@@ -173,7 +173,7 @@ export default function UserPreferences() {
     try {
       // Create checkout session using Amplify API
       const response = await client.mutations.createStripeCheckout({
-        priceId: 'price_1QLrjwA1lmpQFQfrTzzhxLEF', // You can hardcode this or pass it as an env variable
+        priceId: 'price_1QLuzfA1lmpQFQfrRT8ecrrZ', // You can hardcode this or pass it as an env variable
         userId: user.username
       });
   

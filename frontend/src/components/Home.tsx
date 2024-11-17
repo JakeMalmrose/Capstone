@@ -31,8 +31,6 @@ interface ChatMessage {
   isUser: boolean;
 }
 
-
-
 interface ChatResponse {
   response: string;
   feed: string | null;
@@ -217,14 +215,20 @@ function Home() {
                       p: 2,
                       maxWidth: '70%',
                       bgcolor: message.isUser ? 'primary.main' : 'background.paper',
-                      color: message.isUser ? 'primary.contrastText' : 'text.primary',
                       transition: 'transform 0.2s ease-in-out',
                       '&:hover': {
                         transform: 'translateY(-2px)',
                       }
                     }}
                   >
-                    <ListItemText primary={message.text} />
+                    <ListItemText 
+                      primary={message.text} 
+                      sx={{
+                        '& .MuiListItemText-primary': {
+                          color: message.isUser ? '#212121' : 'text.primary'
+                        }
+                      }}
+                    />
                   </Paper>
                 </ListItem>
               ))}

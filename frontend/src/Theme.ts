@@ -7,6 +7,7 @@ export const theme = createTheme({
       main: '#E0C2FF', // Very light purple
       light: '#F2E4FF',
       dark: '#C7A3E8',
+      contrastText: '#212121', // Added blackish color for text contrast
     },
     secondary: {
       main: '#F5F5F5', // Light grey with slight purple tint

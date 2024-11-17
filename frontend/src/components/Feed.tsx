@@ -15,6 +15,11 @@ import {
   IconButton,
   Tooltip,
   LinearProgress,
+  Pagination,
+  FormControl,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -25,18 +30,52 @@ import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
 
+// Pagination options
+const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50];
+const DEFAULT_ITEMS_PER_PAGE = 10;
+
 function Feed() {
   const { feedId } = useParams<{ feedId: string }>();
   const navigate = useNavigate();
   const [feed, setFeed] = useState<Schema['Feed']['type'] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [articles, setArticles] = useState<Schema['Article']['type'][]>([]);
+  const [allArticles, setAllArticles] = useState<Schema['Article']['type'][]>([]); // Store all articles
+  const [displayedArticles, setDisplayedArticles] = useState<Schema['Article']['type'][]>([]); // Store current page articles
   const [fetchingNews, setFetchingNews] = useState(false);
   const [actionMessage, setActionMessage] = useState<{
     type: 'success' | 'error' | 'info';
     message: string;
   } | null>(null);
+  
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
+  };
+
+  const handleItemsPerPageChange = (event: SelectChangeEvent<number>) => {
+    const newItemsPerPage = event.target.value as number;
+    setItemsPerPage(newItemsPerPage);
+    setPage(1); // Reset to first page when changing items per page
+  };
+
+  // Update displayed articles when page, itemsPerPage, or allArticles changes
+  useEffect(() => {
+    const sortedArticles = [...allArticles].sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA;
+    });
+
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    setDisplayedArticles(sortedArticles.slice(startIndex, endIndex));
+    setTotalPages(Math.ceil(sortedArticles.length / itemsPerPage));
+  }, [page, itemsPerPage, allArticles]);
 
   const fetchGNews = async () => {
     if (!feedId || !feed) return;
@@ -69,7 +108,6 @@ function Feed() {
   useEffect(() => {
     if (!feedId) return;
 
-    // Fetch feed details once
     const fetchFeed = async () => {
       try {
         const feedResponse = await client.models.Feed.get({ id: feedId });
@@ -82,12 +120,11 @@ function Feed() {
 
     fetchFeed();
 
-    // Subscribe to articles for this feed
     const subscription = client.models.Article.observeQuery({
       filter: { feedId: { eq: feedId } }
     }).subscribe({
       next: ({ items }) => {
-        setArticles([...items]);
+        setAllArticles(items);
         setLoading(false);
       },
       error: (err) => {
@@ -97,7 +134,6 @@ function Feed() {
       }
     });
 
-    // Cleanup subscription on unmount
     return () => subscription.unsubscribe();
   }, [feedId]);
 
@@ -153,6 +189,9 @@ function Feed() {
           </IconButton>
           <Typography variant="h4" component="h2">
             {feed.name} Articles
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            ({allArticles.length} total articles)
           </Typography>
         </Stack>
 
@@ -219,13 +258,50 @@ function Feed() {
         )}
       </Paper>
 
+      {/* Pagination Controls */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Stack 
+          direction="row" 
+          spacing={2} 
+          alignItems="center"
+          justifyContent="space-between"
+        >
+          <FormControl size="small">
+            <Select
+              value={itemsPerPage}
+              onChange={handleItemsPerPageChange}
+              displayEmpty
+            >
+              {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option} per page
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Pagination 
+            count={totalPages}
+            page={page}
+            onChange={handlePageChange}
+            color="primary"
+            showFirstButton
+            showLastButton
+          />
+
+          <Typography variant="body2" color="text.secondary">
+            Showing {((page - 1) * itemsPerPage) + 1} - {Math.min(page * itemsPerPage, allArticles.length)} of {allArticles.length}
+          </Typography>
+        </Stack>
+      </Paper>
+
       {/* Articles Section */}
       {(fetchingNews) && (
         <LinearProgress sx={{ mb: 2 }} />
       )}
 
       <Stack spacing={2}>
-        {articles.map((article) => (
+        {displayedArticles.map((article) => (
           <Card 
             key={article.id}
             sx={{
@@ -247,6 +323,14 @@ function Feed() {
                 sx={{ mb: 1.5, wordBreak: 'break-word' }}
               >
                 {article.url}
+              </Typography>
+
+              <Typography 
+                variant="body2" 
+                color="text.secondary" 
+                sx={{ mb: 1 }}
+              >
+                {article.createdAt ? new Date(article.createdAt).toLocaleString() : 'Unknown date'}
               </Typography>
 
               <Typography 
@@ -276,12 +360,26 @@ function Feed() {
           </Card>
         ))}
 
-        {articles.length === 0 && (
+        {displayedArticles.length === 0 && (
           <Alert severity="info">
             No articles found. Try fetching news.
           </Alert>
         )}
       </Stack>
+
+      {/* Bottom Pagination */}
+      {displayedArticles.length > 0 && (
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+          <Pagination 
+            count={totalPages}
+            page={page}
+            onChange={handlePageChange}
+            color="primary"
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
     </Box>
   );
 }

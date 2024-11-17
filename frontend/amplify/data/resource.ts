@@ -182,7 +182,7 @@ const schema = a.schema({
   UserPreferences: a
   .model({
     userId: a.string().required(),
-    isPremium: a.boolean(),
+    isPremium: a.boolean().authorization((allow) => [allow.groups(["Admin"])]),
     defaultSummarizerId: a.string(),
     specialRequests: a.string(),
     gNewsCountry: gNewsCountryEnum,

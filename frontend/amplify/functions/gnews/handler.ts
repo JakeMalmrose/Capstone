@@ -257,6 +257,7 @@ async function checkArticleExists(url: string, feedId: string): Promise<boolean>
     }
   });
 
+  console.log("Existing articles in checkArticleExists:", existingArticles.data);
   return existingArticles.data.length > 0;
 }
 

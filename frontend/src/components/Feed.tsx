@@ -29,10 +29,17 @@ import {
 import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
-
-// Pagination options
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50];
 const DEFAULT_ITEMS_PER_PAGE = 10;
+
+type ArticleResponse = {
+  data: {
+    listArticles: {
+      items: Schema['Article']['type'][];
+      nextToken: string | null;
+    };
+  };
+};
 
 function Feed() {
   const { feedId } = useParams<{ feedId: string }>();
@@ -40,8 +47,8 @@ function Feed() {
   const [feed, setFeed] = useState<Schema['Feed']['type'] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [allArticles, setAllArticles] = useState<Schema['Article']['type'][]>([]); // Store all articles
-  const [displayedArticles, setDisplayedArticles] = useState<Schema['Article']['type'][]>([]); // Store current page articles
+  const [allArticles, setAllArticles] = useState<Schema['Article']['type'][]>([]);
+  const [displayedArticles, setDisplayedArticles] = useState<Schema['Article']['type'][]>([]);
   const [fetchingNews, setFetchingNews] = useState(false);
   const [actionMessage, setActionMessage] = useState<{
     type: 'success' | 'error' | 'info';
@@ -52,6 +59,29 @@ function Feed() {
   const [page, setPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
   const [totalPages, setTotalPages] = useState(1);
+
+  const fetchAllArticles = async (feedId: string) => {
+    let allItems: Schema['Article']['type'][] = [];
+    let nextToken: string | null = null;
+    
+    do {
+      try {
+        const response: ArticleResponse = await client.models.Article.list({
+          filter: { feedId: { eq: feedId } },
+          nextToken: nextToken
+        });
+        
+        allItems = [...allItems, ...response.data.listArticles.items];
+        nextToken = response.data.listArticles.nextToken;
+      } catch (err) {
+        console.error('Error fetching articles:', err);
+        setError('Failed to load articles. Please try again later.');
+        break;
+      }
+    } while (nextToken);
+
+    return allItems;
+  };
 
   const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
@@ -91,6 +121,12 @@ function Feed() {
         type: 'success',
         message: 'Successfully fetched news articles'
       });
+      
+      // Refresh articles after fetching news
+      if (feedId) {
+        const items = await fetchAllArticles(feedId);
+        setAllArticles(items);
+      }
     } catch (err) {
       setActionMessage({
         type: 'error',
@@ -101,36 +137,40 @@ function Feed() {
     }
   }
 
-  const processRssFeed = async () => {
-    // Empty method for Get Older Articles functionality
-  }
-
   useEffect(() => {
     if (!feedId) return;
 
-    const fetchFeed = async () => {
+    const initialize = async () => {
       try {
+        // Fetch feed details
         const feedResponse = await client.models.Feed.get({ id: feedId });
         setFeed(feedResponse.data);
+
+        // Fetch all articles initially
+        const items = await fetchAllArticles(feedId);
+        setAllArticles(items);
+        setLoading(false);
       } catch (err) {
-        console.error('Error fetching feed:', err);
+        console.error('Error initializing:', err);
         setError('Failed to load feed. Please try again later.');
+        setLoading(false);
       }
     };
 
-    fetchFeed();
+    initialize();
 
+    // Set up subscription for real-time updates
     const subscription = client.models.Article.observeQuery({
       filter: { feedId: { eq: feedId } }
     }).subscribe({
-      next: ({ items }) => {
-        setAllArticles(items);
-        setLoading(false);
+      next: async ({ items }) => {
+        // When we get an update, fetch all articles again to ensure we have complete data
+        const allItems = await fetchAllArticles(feedId);
+        setAllArticles(allItems);
       },
       error: (err) => {
         console.error('Error observing articles:', err);
         setError('Failed to load articles. Please try again later.');
-        setLoading(false);
       }
     });
 

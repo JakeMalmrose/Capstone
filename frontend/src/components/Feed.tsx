@@ -25,22 +25,6 @@ import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
 
-// // Define interfaces for the data structures
-// interface FeedData {
-//   name: string;
-//   url: string;
-//   description: string;
-//   type: string;
-//   websiteId: string;
-// }
-
-// interface ArticleData {
-//   url: string;
-//   title: string;
-//   fullText: string;
-//   createdAt: string;
-// }
-
 function Feed() {
   const { feedId } = useParams<{ feedId: string }>();
   const navigate = useNavigate();
@@ -68,7 +52,6 @@ function Feed() {
         type: 'success',
         message: 'Successfully fetched news articles'
       });
-      await fetchFeedArticles();
     } catch (err) {
       setActionMessage({
         type: 'error',
@@ -83,29 +66,39 @@ function Feed() {
     // Empty method for Get Older Articles functionality
   }
 
-  const fetchFeedArticles = async () => {
-    if (!feedId) return;
-    setLoading(true);
-    
-    try {
-      const feedResponse = await client.models.Feed.get({ id: feedId });
-      setFeed(feedResponse.data);
-
-      const articlesResponse = await client.models.Article.list({
-        filter: { feedId: { eq: feedId } }
-      });
-      setArticles(articlesResponse.data);
-    } catch (err) {
-      console.error('Error fetching feed:', err);
-      setError('Failed to load feed and articles. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (!feedId) return;
-    fetchFeedArticles();
+
+    // Fetch feed details once
+    const fetchFeed = async () => {
+      try {
+        const feedResponse = await client.models.Feed.get({ id: feedId });
+        setFeed(feedResponse.data);
+      } catch (err) {
+        console.error('Error fetching feed:', err);
+        setError('Failed to load feed. Please try again later.');
+      }
+    };
+
+    fetchFeed();
+
+    // Subscribe to articles for this feed
+    const subscription = client.models.Article.observeQuery({
+      filter: { feedId: { eq: feedId } }
+    }).subscribe({
+      next: ({ items }) => {
+        setArticles([...items]);
+        setLoading(false);
+      },
+      error: (err) => {
+        console.error('Error observing articles:', err);
+        setError('Failed to load articles. Please try again later.');
+        setLoading(false);
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => subscription.unsubscribe();
   }, [feedId]);
 
   if (loading) {
@@ -207,7 +200,7 @@ function Feed() {
 
           <Tooltip title="Refresh Articles">
             <IconButton 
-              onClick={() => fetchFeedArticles()}
+              onClick={() => setLoading(true)}
               color="primary"
             >
               <RefreshIcon />

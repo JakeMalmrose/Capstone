@@ -62,8 +62,19 @@ export const handler: Schema["fetchGNews"]["functionHandler"] = async (event) =>
 
 async function createArticle(article: any): Promise<ArticleCreationResult> {
   try {
+    console.log('Starting article creation process for:', {
+      url: article.url,
+      title: article.title,
+      feedId: article.feedId
+    });
+
     // Validate required fields
     if (!article.url || !article.title || !article.feedId) {
+      console.log('Missing required fields:', { 
+        hasUrl: !!article.url, 
+        hasTitle: !!article.title, 
+        hasFeedId: !!article.feedId 
+      });
       throw new Error(`Missing required fields: ${JSON.stringify({ 
         hasUrl: !!article.url, 
         hasTitle: !!article.title, 
@@ -81,11 +92,14 @@ async function createArticle(article: any): Promise<ArticleCreationResult> {
       tags: Array.isArray(article.tags) ? article.tags : []
     };
 
+    console.log('Normalized article data:', normalizedArticle);
+
     // Check for existing article with retries
     let attempts = 0;
     const maxAttempts = 3;
     
     while (attempts < maxAttempts) {
+      console.log(`Attempt ${attempts + 1} of ${maxAttempts} to create article`);
       try {
         // Check for existing article
         const existingArticles = await client.models.Article.list({
@@ -96,33 +110,55 @@ async function createArticle(article: any): Promise<ArticleCreationResult> {
         });
 
         if (existingArticles.errors) {
+          console.log('Error checking for existing article:', existingArticles.errors);
           throw new Error(`Error checking for existing article: ${JSON.stringify(existingArticles.errors)}`);
         }
 
+        console.log('Existing articles check result:', {
+          count: existingArticles.data.length,
+          articles: existingArticles.data.map(a => ({
+            id: a.id,
+            url: a.url,
+            feedId: a.feedId
+          }))
+        });
+
         // If article exists, return early
         if (existingArticles.data && existingArticles.data.length > 0) {
+          console.log('Article already exists, skipping creation');
           return { 
             success: false, 
             error: 'Article already exists'
           };
         }
 
+        console.log('No existing article found, proceeding with creation');
+
         // Attempt to create the article
         const result = await client.models.Article.create(normalizedArticle);
         
         if (result.errors) {
+          console.log('Article creation failed with errors:', result.errors);
           throw new Error(`Article creation failed: ${JSON.stringify(result.errors)}`);
         }
 
         if (!result.data) {
+          console.log('Article creation returned no data');
           throw new Error('Article creation returned no data');
         }
 
         // Double-check creation was successful
+        console.log('Verifying article creation');
         const verification = await client.models.Article.get({ id: result.data.id });
         if (!verification.data) {
+          console.log('Article creation verification failed');
           throw new Error('Article creation verification failed');
         }
+
+        console.log('Article created successfully:', {
+          id: result.data.id,
+          url: result.data.url
+        });
 
         return { success: true, article: result.data };
       } catch (error) {
@@ -132,11 +168,14 @@ async function createArticle(article: any): Promise<ArticleCreationResult> {
         if (error instanceof Error && 
             (error.message.includes('duplicate key') || 
              error.message.includes('unique constraint'))) {
+          console.log('Detected concurrent creation attempt');
           return { 
             success: false, 
             error: 'Article already exists (concurrent creation detected)'
           };
         }
+
+        console.log(`Attempt ${attempts} failed:`, error);
 
         if (attempts === maxAttempts) {
           throw error;
@@ -144,7 +183,9 @@ async function createArticle(article: any): Promise<ArticleCreationResult> {
 
         // Exponential backoff with jitter
         const jitter = Math.random() * 100;
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 100 + jitter));
+        const delay = Math.pow(2, attempts) * 100 + jitter;
+        console.log(`Retrying after ${delay}ms delay`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
 
@@ -180,19 +221,24 @@ async function fetchGNewsArticles(
   };
 
   try {
+    console.log('Starting fetchGNewsArticles for feed:', feedId);
     const apiKey = process.env.GNEWS_API_KEY;
     if (!apiKey) {
       throw new Error('GNEWS_API_KEY is not set');
     }
 
     const queryParams = buildQueryParams(apiKey, feed);
+    console.log('Fetching articles with params:', queryParams.toString());
     const response = await fetchArticles(queryParams);
     const articles = transformArticles(response.data, feedId, feed);
+    console.log(`Transformed ${articles.length} articles for processing`);
 
     // Process articles in smaller batches to reduce concurrency issues
     const batchSize = 3;
     for (let i = 0; i < articles.length; i += batchSize) {
       const batch = articles.slice(i, i + batchSize);
+      console.log(`Processing batch ${Math.floor(i/batchSize) + 1}, size: ${batch.length}`);
+      
       const batchResults = await Promise.all(
         batch.map(async (article) => {
           try {
@@ -201,8 +247,13 @@ async function fetchGNewsArticles(
             if (creationResult.success && creationResult.article) {
               results.created++;
               results.successfulArticles.push(creationResult.article);
+              console.log('Article created successfully:', {
+                url: article.url,
+                resultId: creationResult.article.id
+              });
             } else if (creationResult.error?.includes('Article already exists')) {
               results.duplicates++;
+              console.log('Duplicate article detected:', article.url);
             } else {
               results.errors++;
               console.error('Article creation failed:', {
@@ -220,10 +271,12 @@ async function fetchGNewsArticles(
         })
       );
 
+      console.log(`Batch ${Math.floor(i/batchSize) + 1} complete. Current results:`, results);
       // Add a small delay between batches to reduce pressure
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
+    console.log('Final results:', results);
     return {
       success: true,
       message: formatResultMessage(results),

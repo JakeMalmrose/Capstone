@@ -60,59 +60,9 @@ export const handler: Schema["fetchGNews"]["functionHandler"] = async (event) =>
   }
 };
 
-
-async function checkArticleExists(url: string, feedId: string): Promise<boolean> {
-  // Add retries with exponential backoff for the existence check
-  const maxRetries = 3;
-  const baseDelay = 1000; // 1 second base delay
-  
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      console.log(`Checking existence of article (attempt ${attempt + 1}/${maxRetries}):`, { url, feedId });
-      
-      const existingArticles = await client.models.Article.list({
-        filter: {
-          url: { eq: url },
-          feedId: { eq: feedId }
-        }
-      });
-
-      if (existingArticles.errors) {
-        console.error('Error checking article existence:', existingArticles.errors);
-        // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, attempt)));
-        continue;
-      }
-
-      console.log('Existing articles found:', existingArticles.data.length);
-      
-      if (existingArticles.data.length > 0) {
-        console.log('Found existing article(s):', existingArticles.data.map(a => a.id));
-        return true;
-      }
-      
-      // Add a small delay even on success to ensure database consistency
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return false;
-    } catch (error) {
-      console.error(`Article existence check failed (attempt ${attempt + 1}):`, error);
-      if (attempt === maxRetries - 1) throw error;
-      await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, attempt)));
-    }
-  }
-  
-  return false;
-}
-
 async function createArticle(article: any): Promise<ArticleCreationResult> {
-  console.log('Starting article creation process for:', {
-    url: article.url,
-    title: article.title,
-    feedId: article.feedId
-  });
-
   try {
-    // Validate required fields
+    // Validate required fields before attempting creation
     if (!article.url || !article.title || !article.feedId) {
       throw new Error(`Missing required fields: ${JSON.stringify({ 
         hasUrl: !!article.url, 
@@ -121,44 +71,21 @@ async function createArticle(article: any): Promise<ArticleCreationResult> {
       })}`);
     }
 
-    // Double-check existence with retries before creation
-    const exists = await checkArticleExists(article.url, article.feedId);
-    if (exists) {
-      return { 
-        success: false, 
-        error: 'Article already exists'
-      };
-    }
-
     // Normalize article data
     const normalizedArticle = {
-      feedId: article.feedId,
-      url: article.url,
-      title: article.title?.substring(0, 1000) || '',
-      fullText: article.fullText?.substring(0, 400000) || '',
+      ...article,
+      fullText: article.fullText?.substring(0, 400000) || '', // Prevent potential field length issues
+      title: article.title?.substring(0, 1000) || '', // Add reasonable limits
       createdAt: article.createdAt || new Date().toISOString(),
       tags: Array.isArray(article.tags) ? article.tags : []
     };
 
-    console.log('Normalized article data:', normalizedArticle);
-
-    // Create with retries
+    // Attempt creation with retry logic
     let attempts = 0;
     const maxAttempts = 3;
     
     while (attempts < maxAttempts) {
       try {
-        console.log(`Attempt ${attempts + 1} of ${maxAttempts} to create article`);
-        
-        // Final existence check right before creation
-        const finalCheck = await checkArticleExists(article.url, article.feedId);
-        if (finalCheck) {
-          return { 
-            success: false, 
-            error: 'Article already exists (caught in final check)'
-          };
-        }
-
         const result = await client.models.Article.create(normalizedArticle);
         
         if (result.errors) {
@@ -169,9 +96,6 @@ async function createArticle(article: any): Promise<ArticleCreationResult> {
           throw new Error('Article creation returned no data');
         }
 
-        // Wait for a moment to ensure consistency
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
         // Verify creation
         const verification = await client.models.Article.get({ id: result.data.id });
         if (!verification.data) {
@@ -181,17 +105,11 @@ async function createArticle(article: any): Promise<ArticleCreationResult> {
         return { success: true, article: result.data };
       } catch (error) {
         attempts++;
-        console.error(`Creation attempt ${attempts} failed:`, error);
-        
         if (attempts === maxAttempts) {
           throw error;
         }
-        
-        // Exponential backoff with jitter
-        const jitter = Math.random() * 500;
-        await new Promise(resolve => 
-          setTimeout(resolve, Math.pow(2, attempts) * 1000 + jitter)
-        );
+        // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 100));
       }
     }
 
@@ -222,7 +140,6 @@ async function fetchGNewsArticles(
     created: 0,
     skipped: 0,
     errors: 0,
-    duplicates: 0,
     successfulArticles: [] as any[]
   };
 
@@ -236,23 +153,21 @@ async function fetchGNewsArticles(
     const response = await fetchArticles(queryParams);
     const articles = transformArticles(response.data, feedId, feed);
 
-    // Process articles sequentially instead of in parallel
-    console.log(`Processing ${articles.length} articles sequentially`);
-    
-    for (let i = 0; i < articles.length; i++) {
-      const article = articles[i];
-      console.log(`Processing article ${i + 1}/${articles.length}`);
-      
+    // Process articles with better error handling
+    for (const article of articles) {
       try {
+        const exists = await checkArticleExists(article.url, feedId);
+        
+        if (exists) {
+          results.skipped++;
+          continue;
+        }
+
         const creationResult = await createArticle(article);
 
         if (creationResult.success && creationResult.article) {
           results.created++;
           results.successfulArticles.push(creationResult.article);
-          console.log(`Successfully created article: ${creationResult.article.id}`);
-        } else if (creationResult.error?.includes('Article already exists')) {
-          results.duplicates++;
-          console.log(`Skipped duplicate article: ${article.url}`);
         } else {
           results.errors++;
           console.error('Article creation failed:', {
@@ -260,9 +175,6 @@ async function fetchGNewsArticles(
             error: creationResult.error
           });
         }
-
-        // Add delay between articles to ensure database consistency
-        await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (error) {
         results.errors++;
         console.error('Article processing error:', {
@@ -282,17 +194,6 @@ async function fetchGNewsArticles(
     console.error('Fatal error in fetchGNewsArticles:', error);
     throw error;
   }
-}
-
-function formatResultMessage(results: { 
-  created: number, 
-  skipped: number, 
-  errors: number,
-  duplicates: number 
-}) {
-  return `Created ${results.created} new articles, detected ${results.duplicates} duplicate articles${
-    results.errors > 0 ? `, failed to process ${results.errors} articles` : ''
-  }.`;
 }
 
 // Helper functions
@@ -346,4 +247,21 @@ function transformArticles(data: GNewsResponse, feedId: string, feed: FeedData) 
         .map(term => `search:${term}`) || [])
     ]
   }));
+}
+
+async function checkArticleExists(url: string, feedId: string): Promise<boolean> {
+  const existingArticles = await client.models.Article.list({
+    filter: {
+      url: { eq: url },
+      feedId: { eq: feedId }
+    }
+  });
+
+  return existingArticles.data.length > 0;
+}
+
+function formatResultMessage(results: { created: number, skipped: number, errors: number }) {
+  return `Created ${results.created} new articles, skipped ${results.skipped} existing articles${
+    results.errors > 0 ? `, failed to process ${results.errors} articles` : ''
+  }.`;
 }

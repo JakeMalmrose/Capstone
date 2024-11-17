@@ -1,14 +1,13 @@
 // amplify/functions/stripe/webhook/handler.ts
 import type { APIGatewayProxyHandler } from "aws-lambda";
 import type { Schema } from "../../../data/resource";
-import { generateClient } from 'aws-amplify/api';
+import client from "../../../services/client";
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-10-28.acacia'
 });
 
-const client = generateClient<Schema>();
 
 interface WebhookError {
   type: string;

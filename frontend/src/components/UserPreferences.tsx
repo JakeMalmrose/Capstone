@@ -34,7 +34,7 @@ type Summarizer = Schema['Summarizer']['type'];
 
 const client = generateClient<Schema>();
 
-const PREMIUM_PRICE = 9.99; // Monthly subscription price
+const PREMIUM_PRICE = 2.00; // Monthly subscription price
 
 export default function UserPreferences() {
   const { user } = useAuthenticator();

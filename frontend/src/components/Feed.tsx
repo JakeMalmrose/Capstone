@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/api';
 import {
@@ -17,9 +17,9 @@ import {
   LinearProgress,
   Pagination,
   FormControl,
+  InputLabel,
   Select,
   MenuItem,
-  SelectChangeEvent,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -29,17 +29,9 @@ import {
 import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
-const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50];
-const DEFAULT_ITEMS_PER_PAGE = 10;
 
-type ArticleResponse = {
-  data: {
-    listArticles: {
-      items: Schema['Article']['type'][];
-      nextToken: string | null;
-    };
-  };
-};
+// Number of items per page options
+const PAGE_SIZE_OPTIONS = [5, 10, 25, 50];
 
 function Feed() {
   const { feedId } = useParams<{ feedId: string }>();
@@ -47,65 +39,34 @@ function Feed() {
   const [feed, setFeed] = useState<Schema['Feed']['type'] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [allArticles, setAllArticles] = useState<Schema['Article']['type'][]>([]);
-  const [displayedArticles, setDisplayedArticles] = useState<Schema['Article']['type'][]>([]);
+  const [articles, setArticles] = useState<Schema['Article']['type'][]>([]);
   const [fetchingNews, setFetchingNews] = useState(false);
   const [actionMessage, setActionMessage] = useState<{
     type: 'success' | 'error' | 'info';
     message: string;
   } | null>(null);
-  
-  // Pagination state
-  const [page, setPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
-  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchAllArticles = async (feedId: string) => {
-    let allItems: Schema['Article']['type'][] = [];
-    let nextToken: string | null = null;
-    
-    do {
-      try {
-        const response: ArticleResponse = await client.models.Article.list({
-          filter: { feedId: { eq: feedId } },
-          nextToken: nextToken
-        });
-        
-        allItems = [...allItems, ...response.data.listArticles.items];
-        nextToken = response.data.listArticles.nextToken;
-      } catch (err) {
-        console.error('Error fetching articles:', err);
-        setError('Failed to load articles. Please try again later.');
-        break;
-      }
-    } while (nextToken);
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-    return allItems;
+  // Calculate pagination values
+  const totalPages = useMemo(() => 
+    Math.ceil(articles.length / pageSize),
+    [articles.length, pageSize]
+  );
+
+  // Get current page's articles
+  const currentArticles = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return articles.slice(startIndex, startIndex + pageSize);
+  }, [articles, currentPage, pageSize]);
+
+  // Reset to first page when page size changes
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
   };
-
-  const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
-    setPage(value);
-  };
-
-  const handleItemsPerPageChange = (event: SelectChangeEvent<number>) => {
-    const newItemsPerPage = event.target.value as number;
-    setItemsPerPage(newItemsPerPage);
-    setPage(1); // Reset to first page when changing items per page
-  };
-
-  // Update displayed articles when page, itemsPerPage, or allArticles changes
-  useEffect(() => {
-    const sortedArticles = [...allArticles].sort((a, b) => {
-      const dateA = new Date(a.createdAt || 0).getTime();
-      const dateB = new Date(b.createdAt || 0).getTime();
-      return dateB - dateA;
-    });
-
-    const startIndex = (page - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    setDisplayedArticles(sortedArticles.slice(startIndex, endIndex));
-    setTotalPages(Math.ceil(sortedArticles.length / itemsPerPage));
-  }, [page, itemsPerPage, allArticles]);
 
   const fetchGNews = async () => {
     if (!feedId || !feed) return;
@@ -121,12 +82,6 @@ function Feed() {
         type: 'success',
         message: 'Successfully fetched news articles'
       });
-      
-      // Refresh articles after fetching news
-      if (feedId) {
-        const items = await fetchAllArticles(feedId);
-        setAllArticles(items);
-      }
     } catch (err) {
       setActionMessage({
         type: 'error',
@@ -137,40 +92,40 @@ function Feed() {
     }
   }
 
+  const processRssFeed = async () => {
+    // Empty method for Get Older Articles functionality
+  }
+
   useEffect(() => {
     if (!feedId) return;
 
-    const initialize = async () => {
+    const fetchFeed = async () => {
       try {
-        // Fetch feed details
         const feedResponse = await client.models.Feed.get({ id: feedId });
         setFeed(feedResponse.data);
-
-        // Fetch all articles initially
-        const items = await fetchAllArticles(feedId);
-        setAllArticles(items);
-        setLoading(false);
       } catch (err) {
-        console.error('Error initializing:', err);
+        console.error('Error fetching feed:', err);
         setError('Failed to load feed. Please try again later.');
-        setLoading(false);
       }
     };
 
-    initialize();
+    fetchFeed();
 
-    // Set up subscription for real-time updates
     const subscription = client.models.Article.observeQuery({
       filter: { feedId: { eq: feedId } }
     }).subscribe({
-      next: async ({ items }) => {
-        // When we get an update, fetch all articles again to ensure we have complete data
-        const allItems = await fetchAllArticles(feedId);
-        setAllArticles(allItems);
+      next: ({ items }) => {
+        // Sort articles by date if needed
+        const sortedItems = [...items].sort((a, b) => 
+          new Date(b.createdAt ?? '').getTime() - new Date(a.createdAt ?? '').getTime()
+        );
+        setArticles(sortedItems);
+        setLoading(false);
       },
       error: (err) => {
         console.error('Error observing articles:', err);
         setError('Failed to load articles. Please try again later.');
+        setLoading(false);
       }
     });
 
@@ -230,9 +185,6 @@ function Feed() {
           <Typography variant="h4" component="h2">
             {feed.name} Articles
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            ({allArticles.length} total articles)
-          </Typography>
         </Stack>
 
         <Typography 
@@ -250,9 +202,7 @@ function Feed() {
                 key={tag}
                 label={tag}
                 size="small"
-                sx={{ 
-                  backgroundColor: 'rgba(224, 194, 255, 0.08)',
-                }}
+                sx={{ backgroundColor: 'rgba(224, 194, 255, 0.08)' }}
               />
             ))}
           </Box>
@@ -298,50 +248,37 @@ function Feed() {
         )}
       </Paper>
 
-      {/* Pagination Controls */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Stack 
-          direction="row" 
-          spacing={2} 
-          alignItems="center"
-          justifyContent="space-between"
-        >
-          <FormControl size="small">
+      {/* Articles Section */}
+      {fetchingNews && (
+        <LinearProgress sx={{ mb: 2 }} />
+      )}
+
+      {articles.length > 0 && (
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Page Size</InputLabel>
             <Select
-              value={itemsPerPage}
-              onChange={handleItemsPerPageChange}
-              displayEmpty
+              value={pageSize}
+              label="Page Size"
+              onChange={(e) => handlePageSizeChange(e.target.value as number)}
             >
-              {ITEMS_PER_PAGE_OPTIONS.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option} per page
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <MenuItem key={size} value={size}>
+                  {size} per page
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
-
-          <Pagination 
-            count={totalPages}
-            page={page}
-            onChange={handlePageChange}
-            color="primary"
-            showFirstButton
-            showLastButton
-          />
-
-          <Typography variant="body2" color="text.secondary">
-            Showing {((page - 1) * itemsPerPage) + 1} - {Math.min(page * itemsPerPage, allArticles.length)} of {allArticles.length}
+          
+          <Typography color="text.secondary">
+            Showing {(currentPage - 1) * pageSize + 1}-
+            {Math.min(currentPage * pageSize, articles.length)} of {articles.length} articles
           </Typography>
-        </Stack>
-      </Paper>
-
-      {/* Articles Section */}
-      {(fetchingNews) && (
-        <LinearProgress sx={{ mb: 2 }} />
+        </Box>
       )}
 
       <Stack spacing={2}>
-        {displayedArticles.map((article) => (
+        {currentArticles.map((article) => (
           <Card 
             key={article.id}
             sx={{
@@ -363,14 +300,6 @@ function Feed() {
                 sx={{ mb: 1.5, wordBreak: 'break-word' }}
               >
                 {article.url}
-              </Typography>
-
-              <Typography 
-                variant="body2" 
-                color="text.secondary" 
-                sx={{ mb: 1 }}
-              >
-                {article.createdAt ? new Date(article.createdAt).toLocaleString() : 'Unknown date'}
               </Typography>
 
               <Typography 
@@ -400,23 +329,20 @@ function Feed() {
           </Card>
         ))}
 
-        {displayedArticles.length === 0 && (
+        {articles.length === 0 && (
           <Alert severity="info">
             No articles found. Try fetching news.
           </Alert>
         )}
       </Stack>
 
-      {/* Bottom Pagination */}
-      {displayedArticles.length > 0 && (
+      {articles.length > 0 && (
         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
           <Pagination 
             count={totalPages}
-            page={page}
-            onChange={handlePageChange}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
             color="primary"
-            showFirstButton
-            showLastButton
           />
         </Box>
       )}

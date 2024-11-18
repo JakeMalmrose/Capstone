@@ -294,7 +294,7 @@ function UnreadArticles() {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="info">
-          No unread articles available! Subscribe to more feeds to discover new content.
+          You've read all your news for now! Subscribe to more feeds to discover new content.
         </Alert>
       </Box>
     );

@@ -119,11 +119,19 @@ function UnreadArticles() {
     let isMounted = true;
 
     async function loadSummary() {
-      if (!currentArticle?.fullText || !appState.summarizer) return;
+      if (!currentArticle?.fullText || !appState.summarizer) {
+        // Reset summary state if we don't have required data
+        setCurrentSummary({
+          text: '',
+          loading: false,
+          error: null
+        });
+        return;
+      }
 
-      setCurrentSummary(prev => ({ ...prev, loading: true }));
-      
       try {
+        setCurrentSummary(prev => ({ ...prev, loading: true, error: null }));
+        
         // First check for existing summary
         const summariesResponse = await client.models.Summary.list({
           filter: {
@@ -135,7 +143,13 @@ function UnreadArticles() {
           }
         });
 
-        if (summariesResponse.data.length > 0 && isMounted) {
+        if (!isMounted) return;
+
+        if (summariesResponse.errors) {
+          throw new Error(`Error fetching summaries: ${JSON.stringify(summariesResponse.errors)}`);
+        }
+
+        if (summariesResponse.data.length > 0) {
           setCurrentSummary({
             text: summariesResponse.data[0].text,
             loading: false,
@@ -152,21 +166,25 @@ function UnreadArticles() {
           specialRequests: appState.userPreferences?.specialRequests
         });
 
-        if (isMounted) {
-          setCurrentSummary({
-            text: result.data || '',
-            loading: false,
-            error: null
-          });
+        if (!isMounted) return;
+
+        if (!result.data) {
+          throw new Error('Summary generation returned no data');
         }
+
+        setCurrentSummary({
+          text: result.data,
+          loading: false,
+          error: null
+        });
       } catch (err) {
         console.error('Error loading summary:', err);
         if (isMounted) {
-          setCurrentSummary({
-            text: '',
+          setCurrentSummary(prev => ({
+            ...prev,
             loading: false,
             error: 'Failed to load summary. Please try again.'
-          });
+          }));
         }
       }
     }
@@ -176,7 +194,7 @@ function UnreadArticles() {
     return () => {
       isMounted = false;
     };
-  }, [currentArticle?.id, appState.summarizer?.id]);
+  }, [currentArticle?.id, appState.summarizer?.id, appState.userPreferences?.specialRequests]);
 
   // Mark article as read and load next
   const markAsRead = async () => {

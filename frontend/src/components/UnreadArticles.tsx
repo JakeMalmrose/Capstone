@@ -23,17 +23,10 @@ interface SummaryState {
   text: string;
   loading: boolean;
   error: string | null;
-  articleId?: string;
-}
-
-interface ArticleWithSummary {
-  article: Schema['Article']['type'];
-  summary: SummaryState;
 }
 
 interface AppState {
   summarizer: Schema['Summarizer']['type'] | null;
-  isInitialized: boolean;
   userPreferences: Schema['UserPreferences']['type'] | null;
 }
 
@@ -41,7 +34,6 @@ function UnreadArticles() {
   // Core state
   const [appState, setAppState] = useState<AppState>({
     summarizer: null,
-    isInitialized: false,
     userPreferences: null
   });
   const [currentArticle, setCurrentArticle] = useState<Schema['Article']['type'] | null>(null);
@@ -50,196 +42,150 @@ function UnreadArticles() {
     loading: false,
     error: null
   });
-  const [nextArticleData, setNextArticleData] = useState<ArticleWithSummary | null>(null);
   
   // UI state
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFullText, setShowFullText] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
 
-  // Helper function to fetch unread articles
-  async function fetchUnreadArticles(userId: string, limit: number = 10) {
-    try {
-      const unreadResponse = await client.models.UnreadArticle.listUnreadByUser({
-        userId: userId
-      });
-  
-      if (unreadResponse.errors) {
-        throw new Error(`Error fetching unread articles: ${JSON.stringify(unreadResponse.errors)}`);
-      }
-  
-      const articlePromises = unreadResponse.data.map(unread => 
-        client.models.Article.get({ id: unread.articleId })
-      );
-  
-      const articleResults = await Promise.all(articlePromises);
-      const articles = articleResults
-        .filter(result => result.data && !result.errors)
-        .map(result => result.data!)
-        .slice(0, limit);
-  
-      return articles;
-    } catch (error) {
-      console.error('Error in fetchUnreadArticles:', error);
-      throw error;
+  // Helper function to fetch single unread article
+  async function fetchUnreadArticle(userId: string) {
+    const unreadResponse = await client.models.UnreadArticle.listUnreadByUser({
+      userId: userId
+    });
+
+    if (unreadResponse.errors) {
+      throw new Error(`Error fetching unread article: ${JSON.stringify(unreadResponse.errors)}`);
     }
+
+    if (unreadResponse.data.length === 0) {
+      return null;
+    }
+
+    const articleResponse = await client.models.Article.get({ 
+      id: unreadResponse.data[0].articleId 
+    });
+
+    if (articleResponse.errors || !articleResponse.data) {
+      throw new Error('Error fetching article details');
+    }
+
+    return articleResponse.data;
   }
 
-  // Initialize app
+  // Initialize app and load first article
   useEffect(() => {
     async function initialize() {
-      if (appState.isInitialized) return;
-      
       try {
-        setLoading(true);
+        setPageLoading(true);
         const user = await getCurrentUser();
 
-        // Load everything in parallel
-        const [preferencesResponse, summarizersResponse, unreadArticles] = await Promise.all([
+        // Load initial data in parallel
+        const [preferencesResponse, summarizersResponse, firstArticle] = await Promise.all([
           client.models.UserPreferences.list({
             filter: { userId: { eq: user.userId } }
           }),
           client.models.Summarizer.list(),
-          fetchUnreadArticles(user.userId, 1)
+          fetchUnreadArticle(user.userId)
         ]);
 
         const userPreferences = preferencesResponse.data[0] || null;
         const selectedSummarizer = summarizersResponse.data.find(s => s.id === userPreferences?.defaultSummarizerId) 
           || summarizersResponse.data[0] || null;
 
-        // Set all state at once
         setAppState({
           summarizer: selectedSummarizer,
-          isInitialized: true,
           userPreferences
         });
 
-        if (unreadArticles.length > 0) {
-          setCurrentArticle(unreadArticles[0]);
+        if (firstArticle) {
+          setCurrentArticle(firstArticle);
         }
         
-        setLoading(false);
+        setPageLoading(false);
       } catch (err) {
         console.error('Error initializing app:', err);
         setError('Failed to initialize application. Please try again later.');
-        setLoading(false);
+        setPageLoading(false);
       }
     }
 
     initialize();
-  }, [appState.isInitialized]);
+  }, []);
 
-  // Fetch summary function
-  const fetchSummary = async (
-    articleId: string, 
-    fullText: string, 
-    summarizerId: string,
-    specialRequests?: string | null
-  ) => {
-    try {
-      const summariesResponse = await client.models.Summary.list({
-        filter: {
-          articleId: { eq: articleId },
-          summarizerId: { eq: summarizerId },
-          ...(specialRequests ? { specialRequests: { eq: specialRequests } } : {})
-        }
-      });
-
-      // Take the most recent summary if multiple exist
-      if (summariesResponse.data.length > 0) {
-        const mostRecentSummary = summariesResponse.data.reduce((latest, current) => {
-          const latestDate = new Date(latest.createdAt || '');
-          const currentDate = new Date(current.createdAt || '');
-          return currentDate > latestDate ? current : latest;
-        });
-
-        return {
-          text: mostRecentSummary.text,
-          loading: false,
-          error: null
-        };
-      }
-
-      const result = await client.queries.summarize({
-        text: fullText,
-        articleId: articleId,
-        summarizerId: summarizerId,
-        specialRequests: specialRequests
-      });
-
-      return {
-        text: result.data || '',
-        loading: false,
-        error: null
-      };
-    } catch (err) {
-      console.error('Error fetching/generating summary:', err);
-      return {
-        text: '',
-        loading: false,
-        error: 'Failed to generate summary. Please try again.'
-      };
-    }
-  };
-
-  // Load current article's summary
+  // Load summary after article is set
   useEffect(() => {
     let isMounted = true;
 
-    async function loadCurrentSummary() {
-      // Only check for essential requirements and loading state
-      if (!currentArticle?.fullText || 
-          !appState.summarizer || 
-          !appState.isInitialized || 
-          currentSummary.loading) return;
-
-      // If we're getting a new article, always try to load its summary
-      if (currentSummary.text && currentSummary.articleId && !currentArticle.id.includes(currentSummary.articleId)) {
-        setCurrentSummary({ text: '', loading: true, error: null });
-      }
+    async function loadSummary() {
+      if (!currentArticle?.fullText || !appState.summarizer) return;
 
       setCurrentSummary(prev => ({ ...prev, loading: true }));
+      
       try {
-        const summary = await fetchSummary(
-          currentArticle.id, 
-          currentArticle.fullText,
-          appState.summarizer.id,
-          appState.userPreferences?.specialRequests
-        );
-        
-        if (summary && isMounted) {
+        // First check for existing summary
+        const summariesResponse = await client.models.Summary.list({
+          filter: {
+            articleId: { eq: currentArticle.id },
+            summarizerId: { eq: appState.summarizer.id },
+            ...(appState.userPreferences?.specialRequests 
+              ? { specialRequests: { eq: appState.userPreferences.specialRequests } } 
+              : {})
+          }
+        });
+
+        if (summariesResponse.data.length > 0 && isMounted) {
           setCurrentSummary({
-            ...summary,
-            articleId: currentArticle.id // Add this to track which article the summary is for
+            text: summariesResponse.data[0].text,
+            loading: false,
+            error: null
+          });
+          return;
+        }
+
+        // Generate new summary if none exists
+        const result = await client.queries.summarize({
+          text: currentArticle.fullText,
+          articleId: currentArticle.id,
+          summarizerId: appState.summarizer.id,
+          specialRequests: appState.userPreferences?.specialRequests
+        });
+
+        if (isMounted) {
+          setCurrentSummary({
+            text: result.data || '',
+            loading: false,
+            error: null
           });
         }
       } catch (err) {
         console.error('Error loading summary:', err);
         if (isMounted) {
-          setCurrentSummary(prev => ({
-            ...prev,
+          setCurrentSummary({
+            text: '',
             loading: false,
-            error: 'Failed to load summary'
-          }));
+            error: 'Failed to load summary. Please try again.'
+          });
         }
       }
     }
 
-    loadCurrentSummary();
+    loadSummary();
 
     return () => {
       isMounted = false;
     };
-  }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized]);
+  }, [currentArticle?.id, appState.summarizer?.id]);
 
-  // Mark article as read function
+  // Mark article as read and load next
   const markAsRead = async () => {
     if (!currentArticle) return;
     
     try {
       const user = await getCurrentUser();
       
+      // Delete from unread articles
       const unreadResponse = await client.models.UnreadArticle.list({
         filter: {
           userId: { eq: user.userId },
@@ -253,6 +199,7 @@ function UnreadArticles() {
         });
       }
       
+      // Mark as read
       await client.models.UserArticleStatus.create({
         userId: user.userId,
         articleId: currentArticle.id,
@@ -260,69 +207,18 @@ function UnreadArticles() {
         readAt: new Date().toISOString(),
       });
       
-      if (nextArticleData) {
-        setCurrentArticle(nextArticleData.article);
-        setCurrentSummary(nextArticleData.summary);
-        setNextArticleData(null);
-      } else {
-        const nextArticle = await fetchNextUnreadArticle();
-        if (nextArticle) {
-          setCurrentArticle(nextArticle);
-          setCurrentSummary({ text: '', loading: true, error: null });
-        } else {
-          setCurrentArticle(null);
-          setCurrentSummary({ text: '', loading: false, error: null });
-        }
-      }
+      // Load next article
+      const nextArticle = await fetchUnreadArticle(user.userId);
+      setCurrentArticle(nextArticle);
+      setCurrentSummary({ text: '', loading: false, error: null });
+      
     } catch (err) {
       console.error('Error marking article as read:', err);
       setError('Failed to mark article as read. Please try again.');
     }
   };
 
-  // Fetch next unread article
-  const fetchNextUnreadArticle = async (): Promise<Schema['Article']['type'] | null> => {
-    try {
-      const user = await getCurrentUser();
-      const unreadArticles = await fetchUnreadArticles(user.userId, 1);
-      return unreadArticles[0] || null;
-    } catch (err) {
-      console.error('Error fetching unread article:', err);
-      throw new Error('Failed to load unread articles');
-    }
-  };
-
-  // Prefetch next article
-  useEffect(() => {
-    async function prefetchNextArticle() {
-      if (!currentArticle || !appState.summarizer || !appState.isInitialized) return;
-
-      try {
-        const nextArticle = await fetchNextUnreadArticle();
-        if (nextArticle?.fullText) {
-          const summary = await fetchSummary(
-            nextArticle.id, 
-            nextArticle.fullText, 
-            appState.summarizer.id,
-            appState.userPreferences?.specialRequests
-          );
-          setNextArticleData({
-            article: nextArticle,
-            summary: summary || { text: '', loading: false, error: null }
-          });
-        } else {
-          setNextArticleData(null);
-        }
-      } catch (err) {
-        console.error('Error prefetching next article:', err);
-      }
-    }
-
-    prefetchNextArticle();
-  }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized]);
-
-  // Loading state
-  if (loading) {
+  if (pageLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
         <CircularProgress />
@@ -330,7 +226,6 @@ function UnreadArticles() {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <Box sx={{ p: 2 }}>
@@ -339,7 +234,6 @@ function UnreadArticles() {
     );
   }
 
-  // No articles state
   if (!currentArticle) {
     return (
       <Box sx={{ p: 3 }}>
@@ -360,15 +254,7 @@ function UnreadArticles() {
         Read Articles
       </Typography>
 
-      <Card 
-        sx={{
-          transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-          '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: (theme) => theme.shadows[4],
-          }
-        }}
-      >
+      <Card>
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
             <Typography variant="h5" component="h2" gutterBottom>
@@ -400,17 +286,7 @@ function UnreadArticles() {
             ) : currentSummary.error ? (
               <Alert severity="error">{currentSummary.error}</Alert>
             ) : currentSummary.text ? (
-              <Paper 
-                elevation={1}
-                sx={{ 
-                  p: 2,
-                  bgcolor: 'background.default',
-                  transition: 'transform 0.2s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                  }
-                }}
-              >
+              <Paper elevation={1} sx={{ p: 2, bgcolor: 'background.default' }}>
                 <Typography>{currentSummary.text}</Typography>
               </Paper>
             ) : null}
@@ -449,7 +325,6 @@ function UnreadArticles() {
               {showFullText ? 'Show Less' : 'Show More'}
             </Button>
           </Box>
-
         </CardContent>
       </Card>
 

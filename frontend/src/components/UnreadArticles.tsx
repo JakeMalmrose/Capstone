@@ -58,7 +58,6 @@ function UnreadArticles() {
   // Helper function to fetch unread articles
   async function fetchUnreadArticles(userId: string, limit: number = 10) {
     try {
-      // Pass an object with userId property
       const unreadResponse = await client.models.UnreadArticle.listUnreadByUser({
         userId: userId
       });
@@ -67,7 +66,6 @@ function UnreadArticles() {
         throw new Error(`Error fetching unread articles: ${JSON.stringify(unreadResponse.errors)}`);
       }
   
-      // Fetch full article data for each unread article
       const articlePromises = unreadResponse.data.map(unread => 
         client.models.Article.get({ id: unread.articleId })
       );
@@ -76,7 +74,7 @@ function UnreadArticles() {
       const articles = articleResults
         .filter(result => result.data && !result.errors)
         .map(result => result.data!)
-        .slice(0, limit); // Apply limit after fetching
+        .slice(0, limit);
   
       return articles;
     } catch (error) {
@@ -85,7 +83,7 @@ function UnreadArticles() {
     }
   }
 
-  // Initialize app - load user preferences and summarizer
+  // Initialize app
   useEffect(() => {
     async function initialize() {
       if (appState.isInitialized) return;
@@ -94,7 +92,6 @@ function UnreadArticles() {
         setLoading(true);
         const user = await getCurrentUser();
 
-        // Load user preferences and summarizers in parallel
         const [preferencesResponse, summarizersResponse] = await Promise.all([
           client.models.UserPreferences.list({
             filter: { userId: { eq: user.userId } }
@@ -111,7 +108,6 @@ function UnreadArticles() {
           isInitialized: true
         });
 
-        // Fetch first unread article
         const unreadArticles = await fetchUnreadArticles(user.userId, 1);
         if (unreadArticles.length > 0) {
           setCurrentArticle(unreadArticles[0]);
@@ -128,7 +124,7 @@ function UnreadArticles() {
     initialize();
   }, [appState.isInitialized]);
 
-  // Fetch summary function
+  // Fetch summary function - Modified to handle existing summaries better
   const fetchSummary = async (articleId: string, fullText: string, userId: string) => {
     if (!appState.summarizer) return null;
 
@@ -139,17 +135,24 @@ function UnreadArticles() {
 
       const specialRequests = userPreferences.data[0]?.specialRequests;
 
-      const existingSummaries = await client.models.Summary.list({
+      const summariesResponse = await client.models.Summary.list({
         filter: {
           articleId: { eq: articleId },
           summarizerId: { eq: appState.summarizer.id },
-          ...(specialRequests ? { specialRequests: { eq: specialRequests } } : { specialRequests: { attributeExists: false } })
+          ...(specialRequests ? { specialRequests: { eq: specialRequests } } : {})
         }
       });
 
-      if (existingSummaries.data.length > 0) {
+      // Take the most recent summary if multiple exist
+      if (summariesResponse.data.length > 0) {
+        const mostRecentSummary = summariesResponse.data.reduce((latest, current) => {
+          const latestDate = new Date(latest.createdAt || '');
+          const currentDate = new Date(current.createdAt || '');
+          return currentDate > latestDate ? current : latest;
+        });
+
         return {
-          text: existingSummaries.data[0].text,
+          text: mostRecentSummary.text,
           loading: false,
           error: null
         };
@@ -177,8 +180,10 @@ function UnreadArticles() {
     }
   };
 
-  // Load current article's summary
+  // Load current article's summary - Modified to be more robust
   useEffect(() => {
+    let isMounted = true;
+
     async function loadCurrentSummary() {
       if (!currentArticle?.fullText || !appState.summarizer || !appState.isInitialized) return;
 
@@ -186,21 +191,79 @@ function UnreadArticles() {
       try {
         const user = await getCurrentUser();
         const summary = await fetchSummary(currentArticle.id, currentArticle.fullText, user.userId);
-        if (summary) {
+        if (summary && isMounted) {
           setCurrentSummary(summary);
         }
       } catch (err) {
         console.error('Error loading summary:', err);
-        setCurrentSummary(prev => ({
-          ...prev,
-          loading: false,
-          error: 'Failed to load summary'
-        }));
+        if (isMounted) {
+          setCurrentSummary(prev => ({
+            ...prev,
+            loading: false,
+            error: 'Failed to load summary'
+          }));
+        }
       }
     }
 
     loadCurrentSummary();
+
+    return () => {
+      isMounted = false;
+    };
   }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized]);
+
+  // Modified markAsRead function to handle state updates more carefully
+  const markAsRead = async () => {
+    if (!currentArticle) return;
+    
+    try {
+      const user = await getCurrentUser();
+      
+      const unreadResponse = await client.models.UnreadArticle.list({
+        filter: {
+          userId: { eq: user.userId },
+          articleId: { eq: currentArticle.id }
+        }
+      });
+  
+      if (unreadResponse.data[0]?.id) {
+        await client.models.UnreadArticle.delete({
+          id: unreadResponse.data[0].id
+        });
+      }
+      
+      await client.models.UserArticleStatus.create({
+        userId: user.userId,
+        articleId: currentArticle.id,
+        isRead: true,
+        readAt: new Date().toISOString(),
+      });
+      
+      if (nextArticleData) {
+        setCurrentArticle(nextArticleData.article);
+        // Important: Reset current summary before setting the new one
+        setCurrentSummary({ text: '', loading: true, error: null });
+        // Use setTimeout to ensure state updates are processed
+        setTimeout(() => {
+          setCurrentSummary(nextArticleData.summary);
+        }, 0);
+        setNextArticleData(null);
+      } else {
+        const nextArticle = await fetchNextUnreadArticle();
+        if (nextArticle) {
+          setCurrentArticle(nextArticle);
+          setCurrentSummary({ text: '', loading: true, error: null });
+        } else {
+          setCurrentArticle(null);
+          setCurrentSummary({ text: '', loading: false, error: null });
+        }
+      }
+    } catch (err) {
+      console.error('Error marking article as read:', err);
+      setError('Failed to mark article as read. Please try again.');
+    }
+  };
 
   // Fetch next unread article
   const fetchNextUnreadArticle = async (): Promise<Schema['Article']['type'] | null> => {
@@ -238,57 +301,6 @@ function UnreadArticles() {
 
     prefetchNextArticle();
   }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized]);
-
-  // Mark article as read
-  const markAsRead = async () => {
-    if (!currentArticle) return;
-    
-    try {
-      const user = await getCurrentUser();
-      
-      // Find the UnreadArticle entry first
-      const unreadResponse = await client.models.UnreadArticle.list({
-        filter: {
-          userId: { eq: user.userId },
-          articleId: { eq: currentArticle.id }
-        }
-      });
-  
-      if (unreadResponse.data[0]?.id) {
-        // Delete using the entry's ID
-        await client.models.UnreadArticle.delete({
-          id: unreadResponse.data[0].id
-        });
-      }
-      
-      // Create UserArticleStatus as before
-      await client.models.UserArticleStatus.create({
-        userId: user.userId,
-        articleId: currentArticle.id,
-        isRead: true,
-        readAt: new Date().toISOString(),
-      });
-      
-      // Rest of the function remains the same...
-      if (nextArticleData) {
-        setCurrentArticle(nextArticleData.article);
-        setCurrentSummary(nextArticleData.summary);
-        setNextArticleData(null);
-      } else {
-        const nextArticle = await fetchNextUnreadArticle();
-        if (nextArticle) {
-          setCurrentArticle(nextArticle);
-          setCurrentSummary({ text: '', loading: true, error: null });
-        } else {
-          setCurrentArticle(null);
-          setCurrentSummary({ text: '', loading: false, error: null });
-        }
-      }
-    } catch (err) {
-      console.error('Error marking article as read:', err);
-      setError('Failed to mark article as read. Please try again.');
-    }
-  };
 
   // Loading state
   if (loading) {

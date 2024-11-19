@@ -292,6 +292,7 @@ const schema = a.schema({
       summarizer: a.belongsTo("Summarizer", "summarizerId"),
       articleId: a.id(),
       article: a.belongsTo("Article", "articleId"),
+      userId: a.string(),
       specialRequests: a.string(),
     })
     .authorization((allow) => [

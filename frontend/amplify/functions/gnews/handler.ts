@@ -233,7 +233,7 @@ async function fetchGNewsArticles(
     // Process articles with better error handling
     for (const article of articles) {
       try {
-        const exists = await checkArticleExists(article.url, feedId);
+        const exists = await checkArticleExists(article.title, feedId);
         
         if (exists) {
           results.skipped++;
@@ -248,14 +248,14 @@ async function fetchGNewsArticles(
         } else {
           results.errors++;
           console.error('Article creation failed:', {
-            url: article.url,
+            title: article.title,
             error: creationResult.error
           });
         }
       } catch (error) {
         results.errors++;
         console.error('Article processing error:', {
-          url: article.url,
+          title: article.title,
           error: error instanceof Error ? error.message : 'Unknown error'
         });
       }
@@ -326,10 +326,10 @@ function transformArticles(data: GNewsResponse, feedId: string, feed: FeedData) 
   }));
 }
 
-async function checkArticleExists(url: string, feedId: string): Promise<boolean> {
+async function checkArticleExists(title: string, feedId: string): Promise<boolean> {
   const existingArticles = await client.models.Article.list({
     filter: {
-      url: { eq: url },
+      title: { eq: title },
       feedId: { eq: feedId }
     }
   });

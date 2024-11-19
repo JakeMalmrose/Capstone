@@ -262,12 +262,7 @@ function UnreadArticles() {
       
       if (nextArticleData) {
         setCurrentArticle(nextArticleData.article);
-        // Important: Reset current summary before setting the new one
-        setCurrentSummary({ text: '', loading: true, error: null });
-        // Use setTimeout to ensure state updates are processed
-        setTimeout(() => {
-          setCurrentSummary(nextArticleData.summary);
-        }, 0);
+        setCurrentSummary(nextArticleData.summary);
         setNextArticleData(null);
       } else {
         const nextArticle = await fetchNextUnreadArticle();

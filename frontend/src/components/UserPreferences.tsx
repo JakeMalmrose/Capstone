@@ -18,10 +18,13 @@ import {
   DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogActions
+  DialogActions,
+  ListItemIcon,
+  Tooltip
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
+import LockIcon from '@mui/icons-material/Lock';
 import { generateClient } from 'aws-amplify/api';
 import type { Schema } from '../../amplify/data/resource';
 
@@ -305,11 +308,29 @@ export default function UserPreferences() {
                   <MenuItem value="">
                     <em>None</em>
                   </MenuItem>
-                  {summarizers.map((summarizer) => (
-                    <MenuItem key={summarizer.id} value={summarizer.id}>
-                      {summarizer.name}
-                    </MenuItem>
-                  ))}
+                  {summarizers.map((summarizer) => {
+                    const isPro = summarizer.tier === 'PRO';
+                    const isDisabled = isPro && !preferences?.isPremium;
+                    
+                    return (
+                      <MenuItem 
+                        key={summarizer.id} 
+                        value={summarizer.id}
+                        disabled={isDisabled}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                          {summarizer.name}
+                          {isPro && (
+                            <Tooltip title={isDisabled ? "Upgrade to Premium to unlock" : "Premium Feature"}>
+                              <ListItemIcon sx={{ minWidth: 'auto', ml: 1 }}>
+                                <LockIcon color={isDisabled ? "disabled" : "primary"} fontSize="small" />
+                              </ListItemIcon>
+                            </Tooltip>
+                          )}
+                        </Box>
+                      </MenuItem>
+                    );
+                  })}
                 </Select>
               </Grid>
 

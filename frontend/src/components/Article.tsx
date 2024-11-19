@@ -14,8 +14,12 @@ import {
   FormControl,
   InputLabel,
   Button,
-  Divider
+  Divider,
+  ListItemIcon,
+  Tooltip
 } from '@mui/material';
+import LockIcon from '@mui/icons-material/Lock';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
 import FeedbackForm from './FeedbackForm';
 import type { Schema } from '../../amplify/data/resource';
 
@@ -35,6 +39,7 @@ function Article() {
   const [selectedSummarizerId, setSelectedSummarizerId] = useState<string>('');
   const [showFullText, setShowFullText] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [summaryState, setSummaryState] = useState<SummaryState>({
     text: '',
     loading: false,
@@ -65,10 +70,15 @@ function Article() {
         setArticle(articleResponse.data);
         setSummarizers(summarizersResponse.data);
         
+        const userPreferences = preferencesResponse.data[0];
+        setIsPremiumUser(userPreferences?.isPremium || false);
+        
         // Only set the selectedSummarizerId after all data is loaded
-        const userPreference = preferencesResponse.data[0]?.defaultSummarizerId;
-        const defaultSummarizer = summarizersResponse.data[0]?.id;
-        setSelectedSummarizerId(userPreference || defaultSummarizer || '');
+        // If user is not premium, only allow selecting FREE tier summarizers
+        const defaultSummarizer = summarizersResponse.data.find(s => 
+          userPreferences?.isPremium ? true : s.tier === 'FREE'
+        );
+        setSelectedSummarizerId(userPreferences?.defaultSummarizerId || defaultSummarizer?.id || '');
         
         setLoading(false);
       } catch (err) {
@@ -141,6 +151,22 @@ function Article() {
 
     fetchSummary();
   }, [selectedSummarizerId, article, articleId, loading, user.username]);
+
+  const handleUpgradeClick = async () => {
+    try {
+      const response = await client.mutations.createStripeCheckout({
+        priceId: 'price_1QLrjwA1lmpQFQfrTzzhxLEF',
+        userId: user.username
+      });
+
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      }
+    } catch (err) {
+      console.error('Error creating checkout session:', err);
+      setError('Failed to start upgrade process. Please try again.');
+    }
+  };
 
   if (loading) {
     return (
@@ -232,13 +258,45 @@ function Article() {
                   onChange={(e) => setSelectedSummarizerId(e.target.value)}
                   label="Select Summarizer"
                 >
-                  {summarizers.map(summarizer => (
-                    <MenuItem key={summarizer.id} value={summarizer.id}>
-                      {summarizer.name} {summarizer.tier === 'PRO' ? '(Pro)' : ''}
-                    </MenuItem>
-                  ))}
+                  {summarizers.map(summarizer => {
+                    const isPro = summarizer.tier === 'PRO';
+                    const isDisabled = isPro && !isPremiumUser;
+                    
+                    return (
+                      <MenuItem 
+                        key={summarizer.id} 
+                        value={summarizer.id}
+                        disabled={isDisabled}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                          <span>{summarizer.name}</span>
+                          {isPro && (
+                            <Tooltip title={isDisabled ? "Upgrade to Premium to unlock" : "Premium Feature"}>
+                              <ListItemIcon sx={{ minWidth: 'auto', ml: 1 }}>
+                                <LockIcon color={isDisabled ? "disabled" : "primary"} fontSize="small" />
+                              </ListItemIcon>
+                            </Tooltip>
+                          )}
+                        </Box>
+                      </MenuItem>
+                    );
+                  })}
                 </Select>
               </FormControl>
+
+              {!isPremiumUser && (
+                <Box sx={{ mb: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<CreditCardIcon />}
+                    onClick={handleUpgradeClick}
+                    size="small"
+                  >
+                    Upgrade to Premium
+                  </Button>
+                </Box>
+              )}
 
               {summaryState.loading ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

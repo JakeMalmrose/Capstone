@@ -23,6 +23,7 @@ interface SummaryState {
   text: string;
   loading: boolean;
   error: string | null;
+  articleId?: string;
 }
 
 interface ArticleWithSummary {
@@ -187,24 +188,33 @@ function UnreadArticles() {
     let isMounted = true;
 
     async function loadCurrentSummary() {
-      // Only proceed if we have all necessary data and no existing summary
+      // Only check for essential requirements and loading state
       if (!currentArticle?.fullText || 
           !appState.summarizer || 
           !appState.isInitialized || 
-          currentSummary.text || 
           currentSummary.loading) return;
+
+      // If we're getting a new article, always try to load its summary
+      if (currentSummary.text && !currentArticle.id.includes(currentSummary.articleId)) {
+        setCurrentSummary({ text: '', loading: true, error: null });
+      }
 
       setCurrentSummary(prev => ({ ...prev, loading: true }));
       try {
+        const user = await getCurrentUser();
         const summary = await fetchSummary(
           currentArticle.id, 
           currentArticle.fullText, 
+          user.userId,
           appState.summarizer.id,
           appState.userPreferences?.specialRequests
         );
         
         if (summary && isMounted) {
-          setCurrentSummary(summary);
+          setCurrentSummary({
+            ...summary,
+            articleId: currentArticle.id // Add this to track which article the summary is for
+          });
         }
       } catch (err) {
         console.error('Error loading summary:', err);
@@ -223,7 +233,7 @@ function UnreadArticles() {
     return () => {
       isMounted = false;
     };
-  }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized, currentSummary.text, currentSummary.loading]);
+  }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized]);
 
   // Mark article as read function
   const markAsRead = async () => {

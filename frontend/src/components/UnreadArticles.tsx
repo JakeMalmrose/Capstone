@@ -33,13 +33,15 @@ interface ArticleWithSummary {
 interface AppState {
   summarizer: Schema['Summarizer']['type'] | null;
   isInitialized: boolean;
+  userPreferences: Schema['UserPreferences']['type'] | null;
 }
 
 function UnreadArticles() {
   // Core state
   const [appState, setAppState] = useState<AppState>({
     summarizer: null,
-    isInitialized: false
+    isInitialized: false,
+    userPreferences: null
   });
   const [currentArticle, setCurrentArticle] = useState<Schema['Article']['type'] | null>(null);
   const [currentSummary, setCurrentSummary] = useState<SummaryState>({
@@ -92,23 +94,26 @@ function UnreadArticles() {
         setLoading(true);
         const user = await getCurrentUser();
 
-        const [preferencesResponse, summarizersResponse] = await Promise.all([
+        // Load everything in parallel
+        const [preferencesResponse, summarizersResponse, unreadArticles] = await Promise.all([
           client.models.UserPreferences.list({
             filter: { userId: { eq: user.userId } }
           }),
           client.models.Summarizer.list(),
+          fetchUnreadArticles(user.userId, 1)
         ]);
 
-        const userPreference = preferencesResponse.data[0]?.defaultSummarizerId;
-        const selectedSummarizer = summarizersResponse.data.find(s => s.id === userPreference) 
+        const userPreferences = preferencesResponse.data[0] || null;
+        const selectedSummarizer = summarizersResponse.data.find(s => s.id === userPreferences?.defaultSummarizerId) 
           || summarizersResponse.data[0] || null;
 
+        // Set all state at once
         setAppState({
           summarizer: selectedSummarizer,
-          isInitialized: true
+          isInitialized: true,
+          userPreferences
         });
 
-        const unreadArticles = await fetchUnreadArticles(user.userId, 1);
         if (unreadArticles.length > 0) {
           setCurrentArticle(unreadArticles[0]);
         }
@@ -124,21 +129,18 @@ function UnreadArticles() {
     initialize();
   }, [appState.isInitialized]);
 
-  // Fetch summary function - Modified to handle existing summaries better
-  const fetchSummary = async (articleId: string, fullText: string, userId: string) => {
-    if (!appState.summarizer) return null;
-
+  // Fetch summary function
+  const fetchSummary = async (
+    articleId: string, 
+    fullText: string, 
+    summarizerId: string,
+    specialRequests?: string | null
+  ) => {
     try {
-      const userPreferences = await client.models.UserPreferences.list({
-        filter: { userId: { eq: userId } }
-      });
-
-      const specialRequests = userPreferences.data[0]?.specialRequests;
-
       const summariesResponse = await client.models.Summary.list({
         filter: {
           articleId: { eq: articleId },
-          summarizerId: { eq: appState.summarizer.id },
+          summarizerId: { eq: summarizerId },
           ...(specialRequests ? { specialRequests: { eq: specialRequests } } : {})
         }
       });
@@ -161,7 +163,7 @@ function UnreadArticles() {
       const result = await client.queries.summarize({
         text: fullText,
         articleId: articleId,
-        summarizerId: appState.summarizer.id,
+        summarizerId: summarizerId,
         specialRequests: specialRequests
       });
 
@@ -180,17 +182,27 @@ function UnreadArticles() {
     }
   };
 
-  // Load current article's summary - Modified to be more robust
+  // Load current article's summary
   useEffect(() => {
     let isMounted = true;
 
     async function loadCurrentSummary() {
-      if (!currentArticle?.fullText || !appState.summarizer || !appState.isInitialized) return;
+      // Only proceed if we have all necessary data and no existing summary
+      if (!currentArticle?.fullText || 
+          !appState.summarizer || 
+          !appState.isInitialized || 
+          currentSummary.text || 
+          currentSummary.loading) return;
 
       setCurrentSummary(prev => ({ ...prev, loading: true }));
       try {
-        const user = await getCurrentUser();
-        const summary = await fetchSummary(currentArticle.id, currentArticle.fullText, user.userId);
+        const summary = await fetchSummary(
+          currentArticle.id, 
+          currentArticle.fullText, 
+          appState.summarizer.id,
+          appState.userPreferences?.specialRequests
+        );
+        
         if (summary && isMounted) {
           setCurrentSummary(summary);
         }
@@ -211,9 +223,9 @@ function UnreadArticles() {
     return () => {
       isMounted = false;
     };
-  }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized]);
+  }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized, currentSummary.text, currentSummary.loading]);
 
-  // Modified markAsRead function to handle state updates more carefully
+  // Mark article as read function
   const markAsRead = async () => {
     if (!currentArticle) return;
     
@@ -285,8 +297,12 @@ function UnreadArticles() {
       try {
         const nextArticle = await fetchNextUnreadArticle();
         if (nextArticle?.fullText) {
-          const user = await getCurrentUser();
-          const summary = await fetchSummary(nextArticle.id, nextArticle.fullText, user.userId);
+          const summary = await fetchSummary(
+            nextArticle.id, 
+            nextArticle.fullText, 
+            appState.summarizer.id,
+            appState.userPreferences?.specialRequests
+          );
           setNextArticleData({
             article: nextArticle,
             summary: summary || { text: '', loading: false, error: null }

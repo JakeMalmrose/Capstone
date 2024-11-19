@@ -219,35 +219,39 @@ function UnreadArticles() {
   }
 
   async function fetchUnreadArticles(feedIds: string[], readArticleIds: Set<string>, limit: number = 10) {
-    let allUnreadArticles: Schema['Article']['type'][] = [];
     let nextToken: string | undefined;
     
     do {
       const response = await client.models.Article.list({
         filter: {
           or: feedIds.map(feedId => ({
-            and: [
-              { feedId: { eq: feedId } },
-              ...Array.from(readArticleIds).map(id => ({
-                id: { ne: id }
-              }))
-            ]
+            feedId: { eq: feedId }
           }))
         },
-        limit,
+        limit: limit * 2, // Fetch more than we need since we'll filter some out
         nextToken
       });
       
-      allUnreadArticles = [...allUnreadArticles, ...response.data];
-      
-      if (allUnreadArticles.length >= limit) {
-        break;
+      // Filter out read articles client-side
+      const unreadArticles = response.data.filter(
+        article => !readArticleIds.has(article.id)
+      );
+  
+      // If we found enough unread articles, return them
+      if (unreadArticles.length >= limit) {
+        return unreadArticles.slice(0, limit);
       }
       
-      nextToken = response.nextToken ?? undefined;
+      // If we got less than we asked for and there's no next page,
+      // return what we have
+      if (!response.nextToken) {
+        return unreadArticles;
+      }
+      
+      nextToken = response.nextToken;
     } while (nextToken);
     
-    return allUnreadArticles;
+    return [];
   }
 
   // Load current article's summary

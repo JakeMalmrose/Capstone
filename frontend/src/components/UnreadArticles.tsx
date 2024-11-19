@@ -35,8 +35,6 @@ interface AppState {
   isInitialized: boolean;
 }
 
-
-
 function UnreadArticles() {
   // Core state
   const [appState, setAppState] = useState<AppState>({
@@ -50,13 +48,42 @@ function UnreadArticles() {
     error: null
   });
   const [nextArticleData, setNextArticleData] = useState<ArticleWithSummary | null>(null);
-  const [readArticleIds, setReadArticleIds] = useState<Set<string>>(new Set());
   
   // UI state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFullText, setShowFullText] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+
+  // Helper function to fetch unread articles
+  async function fetchUnreadArticles(userId: string, limit: number = 10) {
+    try {
+      // Pass an object with userId property
+      const unreadResponse = await client.models.UnreadArticle.listUnreadByUser({
+        userId: userId
+      });
+  
+      if (unreadResponse.errors) {
+        throw new Error(`Error fetching unread articles: ${JSON.stringify(unreadResponse.errors)}`);
+      }
+  
+      // Fetch full article data for each unread article
+      const articlePromises = unreadResponse.data.map(unread => 
+        client.models.Article.get({ id: unread.articleId })
+      );
+  
+      const articleResults = await Promise.all(articlePromises);
+      const articles = articleResults
+        .filter(result => result.data && !result.errors)
+        .map(result => result.data!)
+        .slice(0, limit); // Apply limit after fetching
+  
+      return articles;
+    } catch (error) {
+      console.error('Error in fetchUnreadArticles:', error);
+      throw error;
+    }
+  }
 
   // Initialize app - load user preferences and summarizer
   useEffect(() => {
@@ -67,16 +94,13 @@ function UnreadArticles() {
         setLoading(true);
         const user = await getCurrentUser();
 
-        // Load user preferences, summarizers, and read article IDs in parallel
-        const [preferencesResponse, summarizersResponse, readIds] = await Promise.all([
+        // Load user preferences and summarizers in parallel
+        const [preferencesResponse, summarizersResponse] = await Promise.all([
           client.models.UserPreferences.list({
             filter: { userId: { eq: user.userId } }
           }),
           client.models.Summarizer.list(),
-          fetchAllReadArticleIds(user.userId)
         ]);
-
-        setReadArticleIds(readIds);
 
         const userPreference = preferencesResponse.data[0]?.defaultSummarizerId;
         const selectedSummarizer = summarizersResponse.data.find(s => s.id === userPreference) 
@@ -87,17 +111,10 @@ function UnreadArticles() {
           isInitialized: true
         });
 
-        const userFeeds = await client.models.UserFeedSubscription.list({
-          filter: { userId: { eq: user.userId } }
-        });
-        
-        const feedIds = userFeeds.data.map(sub => sub.feedId);
-        
-        if (feedIds.length > 0) {
-          const unreadArticles = await fetchUnreadArticles(feedIds, readIds, 1);
-          if (unreadArticles.length > 0) {
-            setCurrentArticle(unreadArticles[0]);
-          }
+        // Fetch first unread article
+        const unreadArticles = await fetchUnreadArticles(user.userId, 1);
+        if (unreadArticles.length > 0) {
+          setCurrentArticle(unreadArticles[0]);
         }
         
         setLoading(false);
@@ -111,6 +128,7 @@ function UnreadArticles() {
     initialize();
   }, [appState.isInitialized]);
 
+  // Fetch summary function
   const fetchSummary = async (articleId: string, fullText: string, userId: string) => {
     if (!appState.summarizer) return null;
 
@@ -159,119 +177,6 @@ function UnreadArticles() {
     }
   };
 
-  useEffect(() => {
-    async function loadCurrentSummary() {
-      if (!currentArticle?.fullText || !appState.summarizer || !appState.isInitialized) return;
-
-      setCurrentSummary(prev => ({ ...prev, loading: true }));
-      try {
-        const user = await getCurrentUser();
-        const summary = await fetchSummary(currentArticle.id, currentArticle.fullText, user.userId);
-        if (summary) {
-          setCurrentSummary(summary);
-        }
-      } catch (err) {
-        console.error('Error loading summary:', err);
-        setCurrentSummary(prev => ({
-          ...prev,
-          loading: false,
-          error: 'Failed to load summary'
-        }));
-      }
-    }
-
-    loadCurrentSummary();
-  }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized]);
-
-  const fetchNextUnreadArticle = async (excludeArticleId?: string): Promise<Schema['Article']['type'] | null> => {
-    try {
-      const user = await getCurrentUser();
-      
-      const userFeeds = await client.models.UserFeedSubscription.list({
-        filter: {
-          userId: { eq: user.userId }
-        }
-      });
-      
-      const feedIds = userFeeds.data.map(sub => sub.feedId);
-      
-      if (feedIds.length === 0) {
-        return null;
-      }
-
-      const currentReadIds = new Set(readArticleIds);
-      if (excludeArticleId) {
-        currentReadIds.add(excludeArticleId);
-      }
-
-      const unreadArticles = await fetchUnreadArticles(feedIds, currentReadIds, 1);
-      return unreadArticles[0] || null;
-    } catch (err) {
-      console.error('Error fetching unread article:', err);
-      throw new Error('Failed to load unread articles');
-    }
-  };
-
-  async function fetchAllReadArticleIds(userId: string): Promise<Set<string>> {
-    const readArticleIds = new Set<string>();
-    let nextToken: string | undefined;
-    
-    do {
-      const readStatuses = await client.models.UserArticleStatus.list({
-        filter: {
-          userId: { eq: userId },
-          isRead: { eq: true }
-        },
-        nextToken
-      });
-      
-      // If we got no items, break even if there's a nextToken
-      if (readStatuses.data.length === 0) break;
-      
-      readStatuses.data.forEach(status => readArticleIds.add(status.articleId));
-      nextToken = readStatuses.nextToken ?? undefined;
-    } while (nextToken);
-    
-    return readArticleIds;
-  }
-  
-  
-  async function fetchUnreadArticles(feedIds: string[], readArticleIds: Set<string>, limit: number = 10) {
-    let nextToken: string | undefined;
-    
-    do {
-      const response = await client.models.Article.list({
-        filter: {
-          or: feedIds.map(feedId => ({
-            feedId: { eq: feedId }
-          }))
-        },
-        limit: limit * 2, // Fetch more than we need since we'll filter some out
-        nextToken
-      });
-      
-      // Filter out read articles client-side
-      const unreadArticles = response.data.filter(
-        article => !readArticleIds.has(article.id)
-      );
-  
-      // If we found enough unread articles, return them
-      if (unreadArticles.length >= limit) {
-        return unreadArticles.slice(0, limit);
-      }
-      
-      // If we got less than we asked for and there's no next page,
-      // return what we have
-      if (!response.nextToken) {
-        return unreadArticles;
-      }
-      
-      nextToken = response.nextToken;
-    } while (nextToken);
-    
-    return [];
-  }
-
   // Load current article's summary
   useEffect(() => {
     async function loadCurrentSummary() {
@@ -297,13 +202,25 @@ function UnreadArticles() {
     loadCurrentSummary();
   }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized]);
 
+  // Fetch next unread article
+  const fetchNextUnreadArticle = async (): Promise<Schema['Article']['type'] | null> => {
+    try {
+      const user = await getCurrentUser();
+      const unreadArticles = await fetchUnreadArticles(user.userId, 1);
+      return unreadArticles[0] || null;
+    } catch (err) {
+      console.error('Error fetching unread article:', err);
+      throw new Error('Failed to load unread articles');
+    }
+  };
+
   // Prefetch next article
   useEffect(() => {
     async function prefetchNextArticle() {
       if (!currentArticle || !appState.summarizer || !appState.isInitialized) return;
 
       try {
-        const nextArticle = await fetchNextUnreadArticle(currentArticle.id);
+        const nextArticle = await fetchNextUnreadArticle();
         if (nextArticle?.fullText) {
           const user = await getCurrentUser();
           const summary = await fetchSummary(nextArticle.id, nextArticle.fullText, user.userId);
@@ -321,12 +238,30 @@ function UnreadArticles() {
 
     prefetchNextArticle();
   }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized]);
-  
+
+  // Mark article as read
   const markAsRead = async () => {
     if (!currentArticle) return;
     
     try {
       const user = await getCurrentUser();
+      
+      // Find the UnreadArticle entry first
+      const unreadResponse = await client.models.UnreadArticle.list({
+        filter: {
+          userId: { eq: user.userId },
+          articleId: { eq: currentArticle.id }
+        }
+      });
+  
+      if (unreadResponse.data[0]?.id) {
+        // Delete using the entry's ID
+        await client.models.UnreadArticle.delete({
+          id: unreadResponse.data[0].id
+        });
+      }
+      
+      // Create UserArticleStatus as before
       await client.models.UserArticleStatus.create({
         userId: user.userId,
         articleId: currentArticle.id,
@@ -334,14 +269,13 @@ function UnreadArticles() {
         readAt: new Date().toISOString(),
       });
       
-      setReadArticleIds(prev => new Set(prev).add(currentArticle.id));
-      
+      // Rest of the function remains the same...
       if (nextArticleData) {
         setCurrentArticle(nextArticleData.article);
         setCurrentSummary(nextArticleData.summary);
         setNextArticleData(null);
       } else {
-        const nextArticle = await fetchNextUnreadArticle(currentArticle.id);
+        const nextArticle = await fetchNextUnreadArticle();
         if (nextArticle) {
           setCurrentArticle(nextArticle);
           setCurrentSummary({ text: '', loading: true, error: null });
@@ -356,6 +290,7 @@ function UnreadArticles() {
     }
   };
 
+  // Loading state
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
@@ -364,6 +299,7 @@ function UnreadArticles() {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <Box sx={{ p: 2 }}>
@@ -372,6 +308,7 @@ function UnreadArticles() {
     );
   }
 
+  // No articles state
   if (!currentArticle) {
     return (
       <Box sx={{ p: 3 }}>

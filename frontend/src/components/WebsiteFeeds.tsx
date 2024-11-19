@@ -97,6 +97,12 @@ function WebsiteFeeds() {
         notificationsEnabled: true,
       });
 
+      // Populate unread articles for the new subscription
+      await client.queries.populateUnreadArticles({
+        userId,
+        feedId
+      });
+
       //@ts-ignore
       setSubscriptions(prev => ({
         ...prev,

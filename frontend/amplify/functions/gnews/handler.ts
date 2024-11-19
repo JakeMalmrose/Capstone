@@ -131,6 +131,83 @@ async function createArticle(article: any): Promise<ArticleCreationResult> {
   }
 }
 
+async function createArticleWithUnreadEntries(article: any): Promise<ArticleCreationResult> {
+  try {
+    // First create the article as before
+    const articleResult = await createArticle(article);
+    if (!articleResult.success || !articleResult.article) {
+      return articleResult;
+    }
+
+    // Get all subscribers to this feed
+    const subscribers = await client.models.UserFeedSubscription.list({
+      filter: { feedId: { eq: article.feedId } }
+    });
+
+    if (subscribers.errors) {
+      console.error('Error fetching subscribers:', subscribers.errors);
+      // Article was created but we failed to create unread entries
+      return { 
+        success: true, 
+        article: articleResult.article,
+        error: 'Failed to create some unread entries'
+      };
+    }
+
+    // Create UnreadArticle entries for each subscriber
+    const unreadPromises = subscribers.data.map(subscription => 
+      client.models.UnreadArticle.create({
+        userId: subscription.userId,
+        feedId: article.feedId,
+        articleId: articleResult.article.id,
+        createdAt: article.createdAt || new Date().toISOString(),
+        // Denormalized fields for performance
+        title: article.title,
+        url: article.url,
+        feedName: article.feedName, // You might need to fetch this
+        websiteId: article.websiteId // You might need to fetch this
+      })
+    );
+
+    // Wait for all UnreadArticle creations, but don't fail if some fail
+    const unreadResults = await Promise.allSettled(unreadPromises);
+    
+    const failedUnreads = unreadResults.filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected'
+    );
+
+    if (failedUnreads.length > 0) {
+      console.error('Some UnreadArticle creations failed:', {
+        articleId: articleResult.article.id,
+        failedCount: failedUnreads.length,
+        firstError: failedUnreads[0].reason
+      });
+    }
+
+    return {
+      success: true,
+      article: articleResult.article,
+      error: failedUnreads.length > 0 
+        ? `Article created but ${failedUnreads.length} unread entries failed`
+        : undefined
+    };
+  } catch (error) {
+    console.error('Article creation with unread entries error:', {
+      articleUrl: article.url,
+      error: error instanceof Error ? {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      } : error
+    });
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error during article creation'
+    };
+  }
+}
+
 async function fetchGNewsArticles(
   websiteId: string,
   feedId: string,
@@ -163,7 +240,7 @@ async function fetchGNewsArticles(
           continue;
         }
 
-        const creationResult = await createArticle(article);
+        const creationResult = await createArticleWithUnreadEntries(article);
 
         if (creationResult.success && creationResult.article) {
           results.created++;

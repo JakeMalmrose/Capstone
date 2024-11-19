@@ -7,6 +7,7 @@ import { chatWithLLM } from "../functions/chat-llm/resource";
 import { gnewsFetchAll } from "../functions/gnewsFetchAll/resource";
 import { createCheckoutSession } from "../functions/stripe/create-session/resource";
 import { handleStripeWebhook } from "../functions/stripe/webhook/resource";
+import { populateUnreadArticles } from "../functions/populateUnreadArticles/resource";
 
 const feedDataType = a.customType({
   name: a.string(),
@@ -146,6 +147,25 @@ const schema = a.schema({
     ])
     .handler(a.handler.function(gnewsFetchAll)),
 
+  populateUnreadArticles: a
+    .query()
+    .arguments({
+      userId: a.string().required(),
+      feedId: a.string().required(),
+    })
+    .returns(
+      a.customType({
+        success: a.boolean(),
+        message: a.string(),
+        results: a.json().array()
+      })
+    )
+    .authorization((allow) => [
+      allow.authenticated(),
+      allow.publicApiKey(),
+    ])
+    .handler(a.handler.function(populateUnreadArticles)),
+
   // Data Models
   Feedback: a
     .model({
@@ -205,6 +225,8 @@ const schema = a.schema({
       notificationsEnabled: a.boolean(),
       customName: a.string(),
       lastReadDate: a.datetime(),
+      lastPopulatedArticleId: a.id(),  // To track bulk population of unread articles
+      lastPopulatedAt: a.datetime(),   // To track when we last populated articles
     })
     .authorization((allow) => [
       allow.owner(),
@@ -275,12 +297,41 @@ const schema = a.schema({
       feed: a.belongsTo("Feed", "feedId"),
       summaries: a.hasMany("Summary", "articleId"),
       userStatuses: a.hasMany("UserArticleStatus", "articleId"),
+      unreadEntries: a.hasMany("UnreadArticle", "articleId"),
     })
     .authorization((allow) => [
       allow.owner(), 
       allow.publicApiKey(),
       allow.authenticated().to(["read"]),
       allow.groups(["Admin"]),
+    ]),
+
+  UnreadArticle: a
+    .model({
+      userId: a.string().required(),
+      feedId: a.id().required(),
+      articleId: a.id().required(),
+      createdAt: a.datetime().required(),
+      article: a.belongsTo("Article", "articleId"),
+      title: a.string().required(),
+      url: a.string().required(),
+      feedName: a.string(),
+      websiteId: a.id(),
+    })
+    .secondaryIndexes((index) => [
+      // Using userId as the hash key since that's what we'll query by
+      index("userId")
+        .queryField("listUnreadByUser")
+        .sortKeys(["createdAt"]),
+      // Add another index if we need to query by feed
+      index("feedId")
+        .queryField("listUnreadByFeed")
+        .sortKeys(["createdAt"])
+    ])
+    .authorization((allow) => [
+      allow.owner(),
+      allow.authenticated().to(["read"]),
+      allow.publicApiKey(),
     ]),
 
   Summary: a

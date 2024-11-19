@@ -144,6 +144,12 @@ function Home() {
           subscriptionDate: new Date().toISOString(),
           notificationsEnabled: true
         });
+
+        // Populate unread articles for the new subscription
+        await client.queries.populateUnreadArticles({
+          userId,
+          feedId: currentFeed.id
+        });
       }
   
       setFeedDialog(false);

@@ -225,18 +225,14 @@ function UnreadArticles() {
     do {
       const response = await client.models.Article.list({
         filter: {
-          and: [
-            {
-              or: feedIds.map(feedId => ({
-                feedId: { eq: feedId }
-              }))
-            },
-            {
-              or: Array.from(readArticleIds).map(id => ({
+          or: feedIds.map(feedId => ({
+            and: [
+              { feedId: { eq: feedId } },
+              ...Array.from(readArticleIds).map(id => ({
                 id: { ne: id }
               }))
-            }
-          ]
+            ]
+          }))
         },
         limit,
         nextToken

@@ -330,7 +330,7 @@ const schema = a.schema({
     ])
     .authorization((allow) => [
       allow.owner(),
-      allow.authenticated().to(["read"]),
+      allow.authenticated(),
       allow.publicApiKey(),
     ]),
 

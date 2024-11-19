@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/api';
 import {
@@ -15,6 +15,11 @@ import {
   IconButton,
   Tooltip,
   LinearProgress,
+  Pagination,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -25,21 +30,8 @@ import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
 
-// // Define interfaces for the data structures
-// interface FeedData {
-//   name: string;
-//   url: string;
-//   description: string;
-//   type: string;
-//   websiteId: string;
-// }
-
-// interface ArticleData {
-//   url: string;
-//   title: string;
-//   fullText: string;
-//   createdAt: string;
-// }
+// Number of items per page options
+const PAGE_SIZE_OPTIONS = [5, 10, 25, 50];
 
 function Feed() {
   const { feedId } = useParams<{ feedId: string }>();
@@ -53,6 +45,28 @@ function Feed() {
     type: 'success' | 'error' | 'info';
     message: string;
   } | null>(null);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Calculate pagination values
+  const totalPages = useMemo(() => 
+    Math.ceil(articles.length / pageSize),
+    [articles.length, pageSize]
+  );
+
+  // Get current page's articles
+  const currentArticles = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return articles.slice(startIndex, startIndex + pageSize);
+  }, [articles, currentPage, pageSize]);
+
+  // Reset to first page when page size changes
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
 
   const fetchGNews = async () => {
     if (!feedId || !feed) return;
@@ -68,7 +82,6 @@ function Feed() {
         type: 'success',
         message: 'Successfully fetched news articles'
       });
-      await fetchFeedArticles();
     } catch (err) {
       setActionMessage({
         type: 'error',
@@ -83,29 +96,40 @@ function Feed() {
     // Empty method for Get Older Articles functionality
   }
 
-  const fetchFeedArticles = async () => {
-    if (!feedId) return;
-    setLoading(true);
-    
-    try {
-      const feedResponse = await client.models.Feed.get({ id: feedId });
-      setFeed(feedResponse.data);
-
-      const articlesResponse = await client.models.Article.list({
-        filter: { feedId: { eq: feedId } }
-      });
-      setArticles(articlesResponse.data);
-    } catch (err) {
-      console.error('Error fetching feed:', err);
-      setError('Failed to load feed and articles. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (!feedId) return;
-    fetchFeedArticles();
+
+    const fetchFeed = async () => {
+      try {
+        const feedResponse = await client.models.Feed.get({ id: feedId });
+        setFeed(feedResponse.data);
+      } catch (err) {
+        console.error('Error fetching feed:', err);
+        setError('Failed to load feed. Please try again later.');
+      }
+    };
+
+    fetchFeed();
+
+    const subscription = client.models.Article.observeQuery({
+      filter: { feedId: { eq: feedId } }
+    }).subscribe({
+      next: ({ items }) => {
+        // Sort articles by date if needed
+        const sortedItems = [...items].sort((a, b) => 
+          new Date(b.createdAt ?? '').getTime() - new Date(a.createdAt ?? '').getTime()
+        );
+        setArticles(sortedItems);
+        setLoading(false);
+      },
+      error: (err) => {
+        console.error('Error observing articles:', err);
+        setError('Failed to load articles. Please try again later.');
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [feedId]);
 
   if (loading) {
@@ -178,9 +202,7 @@ function Feed() {
                 key={tag}
                 label={tag}
                 size="small"
-                sx={{ 
-                  backgroundColor: 'rgba(224, 194, 255, 0.08)',
-                }}
+                sx={{ backgroundColor: 'rgba(224, 194, 255, 0.08)' }}
               />
             ))}
           </Box>
@@ -207,7 +229,7 @@ function Feed() {
 
           <Tooltip title="Refresh Articles">
             <IconButton 
-              onClick={() => fetchFeedArticles()}
+              onClick={() => setLoading(true)}
               color="primary"
             >
               <RefreshIcon />
@@ -227,12 +249,36 @@ function Feed() {
       </Paper>
 
       {/* Articles Section */}
-      {(fetchingNews) && (
+      {fetchingNews && (
         <LinearProgress sx={{ mb: 2 }} />
       )}
 
+      {articles.length > 0 && (
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Page Size</InputLabel>
+            <Select
+              value={pageSize}
+              label="Page Size"
+              onChange={(e) => handlePageSizeChange(e.target.value as number)}
+            >
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <MenuItem key={size} value={size}>
+                  {size} per page
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <Typography color="text.secondary">
+            Showing {(currentPage - 1) * pageSize + 1}-
+            {Math.min(currentPage * pageSize, articles.length)} of {articles.length} articles
+          </Typography>
+        </Box>
+      )}
+
       <Stack spacing={2}>
-        {articles.map((article) => (
+        {currentArticles.map((article) => (
           <Card 
             key={article.id}
             sx={{
@@ -289,6 +335,17 @@ function Feed() {
           </Alert>
         )}
       </Stack>
+
+      {articles.length > 0 && (
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+          <Pagination 
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            color="primary"
+          />
+        </Box>
+      )}
     </Box>
   );
 }

@@ -141,8 +141,8 @@ const schema = a.schema({
       a.json()
     )
     .authorization((allow) => [
-      allow.authenticated(),
       allow.publicApiKey(),
+      allow.groups(["Admin"]),
     ])
     .handler(a.handler.function(gnewsFetchAll)),
 
@@ -176,12 +176,13 @@ const schema = a.schema({
     .authorization((allow) => [
       allow.authenticated(),//.to(['read']),
       allow.groups(["Admin"]).to(['create', 'update', 'delete']),
+      
     ]),
 
   UserPreferences: a
   .model({
     userId: a.string().required(),
-    isPremium: a.boolean(),
+    isPremium: a.boolean().authorization((allow) => [allow.groups(["Admin"])]),
     defaultSummarizerId: a.string(),
     specialRequests: a.string(),
     gNewsCountry: gNewsCountryEnum,
@@ -192,6 +193,7 @@ const schema = a.schema({
     allow.owner(),
     allow.authenticated(),
     allow.publicApiKey().to(['read', 'create', 'update', 'delete']),
+    allow.groups(["Admin"]),
   ]),
 
   UserFeedSubscription: a
@@ -208,6 +210,7 @@ const schema = a.schema({
       allow.owner(),
       allow.authenticated().to(["read"]),
       allow.publicApiKey(),
+      allow.groups(["Admin"]),
     ]),
 
   UserArticleStatus: a
@@ -258,6 +261,7 @@ const schema = a.schema({
       allow.owner(), 
       allow.publicApiKey().to(['read', 'create', 'update', 'delete']),
       allow.authenticated().to(["read"]),
+      allow.groups(["Admin"]),
     ]),
 
   Article: a
@@ -276,6 +280,7 @@ const schema = a.schema({
       allow.owner(), 
       allow.publicApiKey(),
       allow.authenticated().to(["read"]),
+      allow.groups(["Admin"]),
     ]),
 
   Summary: a
@@ -292,7 +297,8 @@ const schema = a.schema({
     .authorization((allow) => [
       allow.owner(),
       allow.publicApiKey(), 
-      allow.authenticated().to(["read"])
+      allow.authenticated().to(["read"]),
+      allow.groups(["Admin"]),
     ]),
 
   Summarizer: a

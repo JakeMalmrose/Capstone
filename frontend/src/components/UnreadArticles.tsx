@@ -36,7 +36,6 @@ interface AppState {
 }
 
 function UnreadArticles() {
-  // Core state
   const [appState, setAppState] = useState<AppState>({
     summarizer: null,
     isInitialized: false
@@ -48,12 +47,11 @@ function UnreadArticles() {
     error: null
   });
   const [nextArticleData, setNextArticleData] = useState<ArticleWithSummary | null>(null);
-  
-  // UI state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFullText, setShowFullText] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  const [readArticleIds, setReadArticleIds] = useState<Set<string>>(new Set());
 
   // Initialize app - load user preferences and summarizer
   useEffect(() => {
@@ -64,15 +62,16 @@ function UnreadArticles() {
         setLoading(true);
         const user = await getCurrentUser();
 
-        // Load user preferences and summarizers in parallel
-        const [preferencesResponse, summarizersResponse] = await Promise.all([
+        const [preferencesResponse, summarizersResponse, readIds] = await Promise.all([
           client.models.UserPreferences.list({
             filter: { userId: { eq: user.userId } }
           }),
-          client.models.Summarizer.list()
+          client.models.Summarizer.list(),
+          fetchAllReadArticleIds(user.userId)
         ]);
 
-        // Determine which summarizer to use
+        setReadArticleIds(readIds);
+
         const userPreference = preferencesResponse.data[0]?.defaultSummarizerId;
         const selectedSummarizer = summarizersResponse.data.find(s => s.id === userPreference) 
           || summarizersResponse.data[0] || null;
@@ -82,11 +81,9 @@ function UnreadArticles() {
           isInitialized: true
         });
 
-        // Load initial article after summarizer is set
         const article = await fetchNextUnreadArticle();
         if (article) {
           setCurrentArticle(article);
-          // Summary will be loaded by the summary effect
         }
         
         setLoading(false);
@@ -104,14 +101,12 @@ function UnreadArticles() {
     if (!appState.summarizer) return null;
 
     try {
-      // Get user preferences to check for special requests
       const userPreferences = await client.models.UserPreferences.list({
         filter: { userId: { eq: userId } }
       });
 
       const specialRequests = userPreferences.data[0]?.specialRequests;
 
-      // Try to fetch existing summary based on special requests
       const existingSummaries = await client.models.Summary.list({
         filter: {
           articleId: { eq: articleId },
@@ -128,7 +123,6 @@ function UnreadArticles() {
         };
       }
 
-      // If no existing summary, generate new one
       const result = await client.queries.summarize({
         text: fullText,
         articleId: articleId,
@@ -151,6 +145,30 @@ function UnreadArticles() {
     }
   };
 
+  useEffect(() => {
+    async function loadCurrentSummary() {
+      if (!currentArticle?.fullText || !appState.summarizer || !appState.isInitialized) return;
+
+      setCurrentSummary(prev => ({ ...prev, loading: true }));
+      try {
+        const user = await getCurrentUser();
+        const summary = await fetchSummary(currentArticle.id, currentArticle.fullText, user.userId);
+        if (summary) {
+          setCurrentSummary(summary);
+        }
+      } catch (err) {
+        console.error('Error loading summary:', err);
+        setCurrentSummary(prev => ({
+          ...prev,
+          loading: false,
+          error: 'Failed to load summary'
+        }));
+      }
+    }
+
+    loadCurrentSummary();
+  }, [currentArticle?.id, appState.summarizer?.id, appState.isInitialized]);
+
   const fetchNextUnreadArticle = async (excludeArticleId?: string): Promise<Schema['Article']['type'] | null> => {
     try {
       const user = await getCurrentUser();
@@ -167,34 +185,74 @@ function UnreadArticles() {
         return null;
       }
 
-      const articles = await client.models.Article.list({
-        filter: {
-          or: feedIds.map(feedId => ({
-            feedId: { eq: feedId }
-          }))
-        }
-      });
-      
-      const readStatuses = await client.models.UserArticleStatus.list({
-        filter: {
-          userId: { eq: user.userId },
-          isRead: { eq: true }
-        }
-      });
-      
-      const readArticleIds = new Set(readStatuses.data.map(status => status.articleId));
-      
-      // Find first unread article that's not the excluded one
-      const unreadArticle = articles.data.find(
-        article => !readArticleIds.has(article.id) && article.id !== excludeArticleId
-      );
-      
-      return unreadArticle || null;
+      const currentReadIds = new Set(readArticleIds);
+      if (excludeArticleId) {
+        currentReadIds.add(excludeArticleId);
+      }
+
+      const unreadArticles = await fetchUnreadArticles(feedIds, currentReadIds, 1);
+      return unreadArticles[0] || null;
     } catch (err) {
       console.error('Error fetching unread article:', err);
       throw new Error('Failed to load unread articles');
     }
   };
+
+  async function fetchAllReadArticleIds(userId: string): Promise<Set<string>> {
+    const readArticleIds = new Set<string>();
+    let nextToken: string | undefined;
+    
+    do {
+      const readStatuses = await client.models.UserArticleStatus.list({
+        filter: {
+          userId: { eq: userId },
+          isRead: { eq: true }
+        },
+        nextToken
+      });
+      
+      readStatuses.data.forEach(status => readArticleIds.add(status.articleId));
+      nextToken = readStatuses.nextToken ?? undefined;
+    } while (nextToken);
+    
+    return readArticleIds;
+  }
+
+  async function fetchUnreadArticles(feedIds: string[], readArticleIds: Set<string>, limit: number = 10) {
+    let allUnreadArticles: Schema['Article']['type'][] = [];
+    let nextToken: string | undefined;
+    
+    do {
+      const response = await client.models.Article.list({
+        filter: {
+          and: [
+            {
+              or: feedIds.map(feedId => ({
+                feedId: { eq: feedId }
+              }))
+            },
+            {
+              or: Array.from(readArticleIds).map(id => ({
+                id: { ne: id }
+              }))
+            }
+          ]
+        },
+        limit,
+        nextToken
+      });
+      
+      allUnreadArticles = [...allUnreadArticles, ...response.data];
+      
+      if (allUnreadArticles.length >= limit) {
+        break;
+      }
+      
+      nextToken = response.nextToken ?? undefined;
+    } while (nextToken);
+    
+    return allUnreadArticles;
+  }
 
   // Load current article's summary
   useEffect(() => {
@@ -240,7 +298,6 @@ function UnreadArticles() {
         }
       } catch (err) {
         console.error('Error prefetching next article:', err);
-        // Don't show error to user since this is just prefetching
       }
     }
 
@@ -259,13 +316,13 @@ function UnreadArticles() {
         readAt: new Date().toISOString(),
       });
       
-      // Move next article to current if available
+      setReadArticleIds(prev => new Set(prev).add(currentArticle.id));
+      
       if (nextArticleData) {
         setCurrentArticle(nextArticleData.article);
         setCurrentSummary(nextArticleData.summary);
         setNextArticleData(null);
       } else {
-        // If no next article is prefetched, fetch one now
         const nextArticle = await fetchNextUnreadArticle(currentArticle.id);
         if (nextArticle) {
           setCurrentArticle(nextArticle);
@@ -344,7 +401,6 @@ function UnreadArticles() {
             Published: {currentArticle.createdAt ? new Date(currentArticle.createdAt).toLocaleDateString() : 'Unknown'}
           </Typography>
 
-          {/* Summary Section */}
           <Box sx={{ my: 3 }}>
             <Typography variant="h6" gutterBottom>
               Summary
@@ -374,7 +430,6 @@ function UnreadArticles() {
             ) : null}
           </Box>
 
-          {/* Full Text Section */}
           <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
             <Button
               variant="outlined"

@@ -225,12 +225,16 @@ function UnreadArticles() {
         nextToken
       });
       
+      // If we got no items, break even if there's a nextToken
+      if (readStatuses.data.length === 0) break;
+      
       readStatuses.data.forEach(status => readArticleIds.add(status.articleId));
       nextToken = readStatuses.nextToken ?? undefined;
     } while (nextToken);
     
     return readArticleIds;
   }
+  
   
   async function fetchUnreadArticles(feedIds: string[], readArticleIds: Set<string>, limit: number = 10) {
     let nextToken: string | undefined;

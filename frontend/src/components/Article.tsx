@@ -113,7 +113,7 @@ function Article() {
           filter: {
             articleId: { eq: articleId },
             summarizerId: { eq: selectedSummarizerId },
-            ...(specialRequests ? { specialRequests: { eq: specialRequests } } : { specialRequests: { attributeExists: false } })
+            specialRequests: { eq: specialRequests || undefined }
           }
         });
 

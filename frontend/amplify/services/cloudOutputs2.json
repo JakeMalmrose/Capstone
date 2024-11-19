@@ -1292,8 +1292,8 @@
                 ]
               }
             },
-            "userId": {
-              "name": "userId",
+            "specialRequests": {
+              "name": "specialRequests",
               "isArray": false,
               "type": "String",
               "isRequired": false,
@@ -1795,8 +1795,8 @@
               "type": "String",
               "isRequired": false
             },
-            "userId": {
-              "name": "userId",
+            "specialRequests": {
+              "name": "specialRequests",
               "isArray": false,
               "type": "String",
               "isRequired": false

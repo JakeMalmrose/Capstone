@@ -195,17 +195,15 @@ function UnreadArticles() {
           currentSummary.loading) return;
 
       // If we're getting a new article, always try to load its summary
-      if (currentSummary.text && !currentArticle.id.includes(currentSummary.articleId)) {
+      if (currentSummary.text && currentSummary.articleId && !currentArticle.id.includes(currentSummary.articleId)) {
         setCurrentSummary({ text: '', loading: true, error: null });
       }
 
       setCurrentSummary(prev => ({ ...prev, loading: true }));
       try {
-        const user = await getCurrentUser();
         const summary = await fetchSummary(
           currentArticle.id, 
-          currentArticle.fullText, 
-          user.userId,
+          currentArticle.fullText,
           appState.summarizer.id,
           appState.userPreferences?.specialRequests
         );

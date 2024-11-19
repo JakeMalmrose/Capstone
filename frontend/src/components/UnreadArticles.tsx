@@ -133,7 +133,7 @@ function UnreadArticles() {
         text: fullText,
         articleId: articleId,
         summarizerId: appState.summarizer.id,
-        userId: userId // Still need to pass userId for authorization
+        specialRequests: specialRequests
       });
 
       return {

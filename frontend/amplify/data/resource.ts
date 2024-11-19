@@ -80,7 +80,7 @@ const schema = a.schema({
       text: a.string(),
       articleId: a.string(),
       summarizerId: a.string(),
-      userId: a.string(),
+      specialRequests: a.string(),
     })
     .returns(a.string())
     .authorization((allow) => [
@@ -292,7 +292,6 @@ const schema = a.schema({
       summarizer: a.belongsTo("Summarizer", "summarizerId"),
       articleId: a.id(),
       article: a.belongsTo("Article", "articleId"),
-      userId: a.string(),
       specialRequests: a.string(),
     })
     .authorization((allow) => [

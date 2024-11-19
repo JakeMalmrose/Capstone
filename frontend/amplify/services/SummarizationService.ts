@@ -3,7 +3,6 @@ import { LLMClient, LLMConfig, LLMMessage } from './llmClients/LLMClient';
 import client from './client';
 
 type SummaryType = Schema['Summary']['type'];
-type UserPreferencesType = Schema['UserPreferences']['type'];
 
 export class SummarizationService {
   private llmClient: LLMClient;
@@ -16,25 +15,7 @@ export class SummarizationService {
     this.config = config;
   }
 
-  private async getUserPreferences(userId: string): Promise<UserPreferencesType | null> {
-    try {
-      const { data: preferences } = await client.models.UserPreferences.list({
-        filter: {
-          userId: { eq: userId }
-        }
-      });
-
-      return preferences && preferences.length > 0 ? preferences[0] : null;
-    } catch (error) {
-      console.error("Error fetching user preferences:", error);
-      return null;
-    }
-  }
-
-  async summarizeArticle(articleId: string, text: string, userId: string): Promise<SummaryType> {
-    // Get user preferences
-    const userPrefs = await this.getUserPreferences(userId);
-    const specialRequests = userPrefs?.specialRequests;
+  async summarizeArticle(articleId: string, text: string, specialRequests: string): Promise<SummaryType> {
     
     // Check if a summary with these special requests already exists
     if (specialRequests) {
@@ -84,12 +65,8 @@ export class SummarizationService {
     }
   }
 
-  async getSummary(articleId: string, userId: string): Promise<SummaryType | null> {
-    try {
-      // Get user preferences to check for special requests
-      const userPrefs = await this.getUserPreferences(userId);
-      const specialRequests = userPrefs?.specialRequests;
-      
+  async getSummary(articleId: string, specialRequests: string): Promise<SummaryType | null> {
+    try {      
       // If user has special requests, try to find a matching summary
       if (specialRequests) {
         const { data: specialSummaries } = await client.models.Summary.list({

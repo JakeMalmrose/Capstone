@@ -131,7 +131,7 @@ function Article() {
           text: article.fullText,
           articleId: article.id,
           summarizerId: selectedSummarizerId,
-          userId: user.username // Still need to pass userId for authorization
+          specialRequests: specialRequests
         });
 
         setSummaryState(prev => ({

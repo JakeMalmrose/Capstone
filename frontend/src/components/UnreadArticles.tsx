@@ -104,12 +104,19 @@ function UnreadArticles() {
     if (!appState.summarizer) return null;
 
     try {
-      // Try to fetch existing summary
+      // Get user preferences to check for special requests
+      const userPreferences = await client.models.UserPreferences.list({
+        filter: { userId: { eq: userId } }
+      });
+
+      const specialRequests = userPreferences.data[0]?.specialRequests;
+
+      // Try to fetch existing summary based on special requests
       const existingSummaries = await client.models.Summary.list({
         filter: {
           articleId: { eq: articleId },
           summarizerId: { eq: appState.summarizer.id },
-          userId: { attributeExists: false }
+          ...(specialRequests ? { specialRequests: { eq: specialRequests } } : { specialRequests: { attributeExists: false } })
         }
       });
 
@@ -126,7 +133,7 @@ function UnreadArticles() {
         text: fullText,
         articleId: articleId,
         summarizerId: appState.summarizer.id,
-        userId: userId
+        userId: userId // Still need to pass userId for authorization
       });
 
       return {

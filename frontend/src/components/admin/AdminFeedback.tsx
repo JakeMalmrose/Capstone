@@ -24,7 +24,8 @@ import {
   DialogActions,
   Button,
   TextField,
-  Link
+  Link,
+  Divider
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -139,9 +140,25 @@ function DetailModal({ open, feedback, onClose, onSave }: DetailModalProps) {
           {summaries && (
             <Box sx={{ mt: 3 }}>
               <Typography variant="h6" gutterBottom>Summaries</Typography>
-              <Paper sx={{ p: 2, mt: 1, maxHeight: 200, overflow: 'auto' }}>
-                {summaries.map((summary) => (
-                  <Typography key={summary.id}>{summary.text}</Typography>
+              <Paper sx={{ p: 2, mt: 1, maxHeight: 300, overflow: 'auto' }}>
+                {summaries.map((summary, index) => (
+                  <Box key={summary.id} sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" color="primary" gutterBottom>
+                      Summary {index + 1}
+                    </Typography>
+                    <Typography paragraph>{summary.text}</Typography>
+                    {summary.specialRequests && (
+                      <>
+                        <Typography variant="subtitle2" color="secondary">
+                          Special Requests:
+                        </Typography>
+                        <Typography paragraph sx={{ pl: 2, fontStyle: 'italic' }}>
+                          {summary.specialRequests}
+                        </Typography>
+                      </>
+                    )}
+                    {index < summaries.length - 1 && <Divider sx={{ my: 2 }} />}
+                  </Box>
                 ))}
               </Paper>
             </Box>

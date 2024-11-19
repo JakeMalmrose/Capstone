@@ -106,14 +106,14 @@ function Article() {
           }
         });
 
-        const hasSpecialRequests = userPreferences.data[0]?.specialRequests;
+        const specialRequests = userPreferences.data[0]?.specialRequests;
         
-        // Try to fetch existing summary based on user preferences
+        // Try to fetch existing summary based on special requests
         const existingSummaries = await client.models.Summary.list({
           filter: {
             articleId: { eq: articleId },
             summarizerId: { eq: selectedSummarizerId },
-            ...(hasSpecialRequests ? { userId: { eq: user.username } } : { userId: { attributeExists: false } })
+            ...(specialRequests ? { specialRequests: { eq: specialRequests } } : { specialRequests: { attributeExists: false } })
           }
         });
 
@@ -131,7 +131,7 @@ function Article() {
           text: article.fullText,
           articleId: article.id,
           summarizerId: selectedSummarizerId,
-          userId: user.username
+          userId: user.username // Still need to pass userId for authorization
         });
 
         setSummaryState(prev => ({

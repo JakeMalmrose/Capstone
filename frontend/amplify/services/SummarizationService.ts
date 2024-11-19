@@ -34,11 +34,27 @@ export class SummarizationService {
   async summarizeArticle(articleId: string, text: string, userId: string): Promise<SummaryType> {
     // Get user preferences
     const userPrefs = await this.getUserPreferences(userId);
+    const specialRequests = userPrefs?.specialRequests;
     
-    // Build system prompt with user preferences if they exist
+    // Check if a summary with these special requests already exists
+    if (specialRequests) {
+      const { data: existingSummaries } = await client.models.Summary.list({
+        filter: {
+          articleId: { eq: articleId },
+          summarizerId: { eq: this.summarizerId },
+          specialRequests: { eq: specialRequests }
+        }
+      });
+
+      if (existingSummaries && existingSummaries.length > 0) {
+        return existingSummaries[0];
+      }
+    }
+    
+    // Build system prompt with special requests if they exist
     let systemPrompt = "You are a news article summarizer. Provide a clear, concise one-paragraph summary of the article.";
-    if (userPrefs?.specialRequests) {
-      systemPrompt += `The reader has requested you to respond with the following instructions: <instructions>${userPrefs.specialRequests}</instructions>.`;
+    if (specialRequests) {
+      systemPrompt += ` The reader has requested you to respond with the following instructions: <instructions>${specialRequests}</instructions>.`;
     }
     
     try {
@@ -48,13 +64,13 @@ export class SummarizationService {
         { role: 'user', content: text }
       ], this.config);
 
-      // Create summary in database with userId if special requests exist
+      // Create summary in database with special requests if they exist
       const { data: createdSummary } = await client.models.Summary.create({
         text: summaryText,
         articleId: articleId,
         summarizerId: this.summarizerId,
         createdAt: new Date().toISOString(),
-        userId: userPrefs?.specialRequests ? userId : undefined, // Only include userId if special requests exist
+        specialRequests: specialRequests || undefined,
       });
 
       if (!createdSummary) {
@@ -70,29 +86,31 @@ export class SummarizationService {
 
   async getSummary(articleId: string, userId: string): Promise<SummaryType | null> {
     try {
-      // First check for user-specific summary if user has preferences
+      // Get user preferences to check for special requests
       const userPrefs = await this.getUserPreferences(userId);
+      const specialRequests = userPrefs?.specialRequests;
       
-      if (userPrefs?.specialRequests) {
-        const { data: userSummaries } = await client.models.Summary.list({
+      // If user has special requests, try to find a matching summary
+      if (specialRequests) {
+        const { data: specialSummaries } = await client.models.Summary.list({
           filter: {
             articleId: { eq: articleId },
             summarizerId: { eq: this.summarizerId },
-            userId: { eq: userId }
+            specialRequests: { eq: specialRequests }
           }
         });
 
-        if (userSummaries && userSummaries.length > 0) {
-          return userSummaries[0];
+        if (specialSummaries && specialSummaries.length > 0) {
+          return specialSummaries[0];
         }
       }
 
-      // If no user-specific summary exists, get generic summary
+      // If no special requests or no matching summary exists, get generic summary
       const { data: genericSummaries } = await client.models.Summary.list({
         filter: {
           articleId: { eq: articleId },
           summarizerId: { eq: this.summarizerId },
-          userId: { attributeExists: false }
+          specialRequests: { attributeExists: false }
         }
       });
 

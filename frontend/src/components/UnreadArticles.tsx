@@ -35,7 +35,10 @@ interface AppState {
   isInitialized: boolean;
 }
 
+
+
 function UnreadArticles() {
+  // Core state
   const [appState, setAppState] = useState<AppState>({
     summarizer: null,
     isInitialized: false
@@ -47,11 +50,13 @@ function UnreadArticles() {
     error: null
   });
   const [nextArticleData, setNextArticleData] = useState<ArticleWithSummary | null>(null);
+  const [readArticleIds, setReadArticleIds] = useState<Set<string>>(new Set());
+  
+  // UI state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFullText, setShowFullText] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
-  const [readArticleIds, setReadArticleIds] = useState<Set<string>>(new Set());
 
   // Initialize app - load user preferences and summarizer
   useEffect(() => {
@@ -62,6 +67,7 @@ function UnreadArticles() {
         setLoading(true);
         const user = await getCurrentUser();
 
+        // Load user preferences, summarizers, and read article IDs in parallel
         const [preferencesResponse, summarizersResponse, readIds] = await Promise.all([
           client.models.UserPreferences.list({
             filter: { userId: { eq: user.userId } }
@@ -81,9 +87,17 @@ function UnreadArticles() {
           isInitialized: true
         });
 
-        const article = await fetchNextUnreadArticle();
-        if (article) {
-          setCurrentArticle(article);
+        const userFeeds = await client.models.UserFeedSubscription.list({
+          filter: { userId: { eq: user.userId } }
+        });
+        
+        const feedIds = userFeeds.data.map(sub => sub.feedId);
+        
+        if (feedIds.length > 0) {
+          const unreadArticles = await fetchUnreadArticles(feedIds, readIds, 1);
+          if (unreadArticles.length > 0) {
+            setCurrentArticle(unreadArticles[0]);
+          }
         }
         
         setLoading(false);
@@ -217,7 +231,7 @@ function UnreadArticles() {
     
     return readArticleIds;
   }
-
+  
   async function fetchUnreadArticles(feedIds: string[], readArticleIds: Set<string>, limit: number = 10) {
     let nextToken: string | undefined;
     

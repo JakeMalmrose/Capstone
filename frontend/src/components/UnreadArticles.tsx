@@ -154,7 +154,6 @@ function UnreadArticles() {
           filter: {
             articleId: { eq: currentArticle.id },
             summarizerId: { eq: appState.summarizer.id },
-            specialRequests: { eq: appState.userPreferences?.specialRequests || "" }
           }
         });
 
@@ -178,7 +177,7 @@ function UnreadArticles() {
           text: currentArticle.fullText,
           articleId: currentArticle.id,
           summarizerId: appState.summarizer.id,
-          specialRequests: { eq: appState.userPreferences?.specialRequests || "" }
+          //specialRequests: { eq: appState.userPreferences?.specialRequests || "" }
         });
 
         if (!isMounted) return;

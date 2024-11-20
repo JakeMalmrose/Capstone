@@ -145,6 +145,11 @@ function Home() {
           notificationsEnabled: true
         });
 
+        await client.mutations.fetchGNews({
+          feedId: currentFeed.id,
+          websiteId: currentFeed.websiteId
+        })
+
         // Populate unread articles for the new subscription
         await client.queries.populateUnreadArticles({
           userId,

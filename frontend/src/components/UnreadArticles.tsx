@@ -42,6 +42,7 @@ function UnreadArticles() {
     loading: false,
     error: null
   });
+  const [unreadArticles, setUnreadArticles] = useState<Schema['UnreadArticle']['type'][]>([]);
   
   // UI state
   const [pageLoading, setPageLoading] = useState(true);
@@ -49,45 +50,21 @@ function UnreadArticles() {
   const [showFullText, setShowFullText] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
 
-  // Helper function to fetch single unread article
-  async function fetchUnreadArticle(userId: string) {
-    const unreadResponse = await client.models.UnreadArticle.listUnreadByUser({
-      userId: userId
-    });
-
-    if (unreadResponse.errors) {
-      throw new Error(`Error fetching unread article: ${JSON.stringify(unreadResponse.errors)}`);
-    }
-
-    if (unreadResponse.data.length === 0) {
-      return null;
-    }
-
-    const articleResponse = await client.models.Article.get({ 
-      id: unreadResponse.data[0].articleId 
-    });
-
-    if (articleResponse.errors || !articleResponse.data) {
-      throw new Error('Error fetching article details');
-    }
-
-    return articleResponse.data;
-  }
-
-  // Initialize app and load first article
+  // Load initial app state and set up observe query
   useEffect(() => {
+    let subscription: { unsubscribe: () => void } | null = null;
+
     async function initialize() {
       try {
         setPageLoading(true);
         const user = await getCurrentUser();
 
-        // Load initial data in parallel
-        const [preferencesResponse, summarizersResponse, firstArticle] = await Promise.all([
+        // Load user preferences and summarizers in parallel
+        const [preferencesResponse, summarizersResponse] = await Promise.all([
           client.models.UserPreferences.list({
             filter: { userId: { eq: user.userId } }
           }),
-          client.models.Summarizer.list(),
-          fetchUnreadArticle(user.userId)
+          client.models.Summarizer.list()
         ]);
 
         const userPreferences = preferencesResponse.data[0] || null;
@@ -99,11 +76,30 @@ function UnreadArticles() {
           userPreferences
         });
 
-        if (firstArticle) {
-          setCurrentArticle(firstArticle);
-        }
-        
-        setPageLoading(false);
+        // Set up observe query for unread articles
+        subscription = client.models.UnreadArticle.observeQuery({
+          filter: { userId: { eq: user.userId } }
+        }).subscribe({
+          next: ({ items }) => {
+            const sortedItems = [...items].sort((a, b) => 
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            setUnreadArticles(sortedItems);
+            
+            // Set first article if we don't have one yet
+            if (!currentArticle && sortedItems.length > 0) {
+              loadFullArticle(sortedItems[0].articleId);
+            }
+            
+            setPageLoading(false);
+          },
+          error: (err) => {
+            console.error('Error observing unread articles:', err);
+            setError('Failed to load articles. Please try again later.');
+            setPageLoading(false);
+          }
+        });
+
       } catch (err) {
         console.error('Error initializing app:', err);
         setError('Failed to initialize application. Please try again later.');
@@ -112,7 +108,29 @@ function UnreadArticles() {
     }
 
     initialize();
+
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
   }, []);
+
+  // Helper function to load full article details
+  async function loadFullArticle(articleId: string) {
+    try {
+      const articleResponse = await client.models.Article.get({ id: articleId });
+      
+      if (articleResponse.errors || !articleResponse.data) {
+        throw new Error('Error fetching article details');
+      }
+
+      setCurrentArticle(articleResponse.data);
+    } catch (err) {
+      console.error('Error loading full article:', err);
+      setError('Failed to load article details. Please try again.');
+    }
+  }
 
   // Load summary after article is set
   useEffect(() => {
@@ -120,7 +138,6 @@ function UnreadArticles() {
 
     async function loadSummary() {
       if (!currentArticle?.fullText || !appState.summarizer) {
-        // Reset summary state if we don't have required data
         setCurrentSummary({
           text: '',
           loading: false,
@@ -132,14 +149,12 @@ function UnreadArticles() {
       try {
         setCurrentSummary(prev => ({ ...prev, loading: true, error: null }));
         
-        // First check for existing summary
+        // Check for existing summary
         const summariesResponse = await client.models.Summary.list({
           filter: {
             articleId: { eq: currentArticle.id },
             summarizerId: { eq: appState.summarizer.id },
-            ...(appState.userPreferences?.specialRequests 
-              ? { specialRequests: { eq: appState.userPreferences.specialRequests } } 
-              : {})
+            specialRequests: { eq: appState.userPreferences?.specialRequests || "" }
           }
         });
 
@@ -163,7 +178,7 @@ function UnreadArticles() {
           text: currentArticle.fullText,
           articleId: currentArticle.id,
           summarizerId: appState.summarizer.id,
-          specialRequests: appState.userPreferences?.specialRequests
+          specialRequests: { eq: appState.userPreferences?.specialRequests || "" }
         });
 
         if (!isMounted) return;
@@ -203,17 +218,13 @@ function UnreadArticles() {
     try {
       const user = await getCurrentUser();
       
-      // Delete from unread articles
-      const unreadResponse = await client.models.UnreadArticle.list({
-        filter: {
-          userId: { eq: user.userId },
-          articleId: { eq: currentArticle.id }
-        }
-      });
-  
-      if (unreadResponse.data[0]?.id) {
+      // Find the current unread article entry
+      const currentUnreadEntry = unreadArticles.find(ua => ua.articleId === currentArticle.id);
+      
+      if (currentUnreadEntry?.id) {
+        // Delete from unread articles
         await client.models.UnreadArticle.delete({
-          id: unreadResponse.data[0].id
+          id: currentUnreadEntry.id
         });
       }
       
@@ -225,9 +236,14 @@ function UnreadArticles() {
         readAt: new Date().toISOString(),
       });
       
-      // Load next article
-      const nextArticle = await fetchUnreadArticle(user.userId);
-      setCurrentArticle(nextArticle);
+      // Load next article if available
+      const currentIndex = unreadArticles.findIndex(ua => ua.articleId === currentArticle.id);
+      if (currentIndex > -1 && currentIndex < unreadArticles.length - 1) {
+        loadFullArticle(unreadArticles[currentIndex + 1].articleId);
+      } else {
+        setCurrentArticle(null);
+      }
+      
       setCurrentSummary({ text: '', loading: false, error: null });
       
     } catch (err) {

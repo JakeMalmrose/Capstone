@@ -79,41 +79,46 @@ async function createArticle(article: any): Promise<ArticleCreationResult> {
       createdAt: article.createdAt || new Date().toISOString(),
       tags: Array.isArray(article.tags) ? article.tags : []
     };
-
-    // Attempt creation with retry logic
-    let attempts = 0;
-    const maxAttempts = 3;
     
-    while (attempts < maxAttempts) {
+    
       try {
+        console.log("Creating article:", normalizedArticle);
         const result = await client.models.Article.create(normalizedArticle);
         
         if (result.errors) {
+          console.error('Article creation errors:', result.errors);
           throw new Error(`Article creation failed: ${JSON.stringify(result.errors)}`);
         }
 
         if (!result.data) {
+          console.error('Article creation returned no data');
           throw new Error('Article creation returned no data');
         }
 
         // Verify creation
         const verification = await client.models.Article.get({ id: result.data.id });
         if (!verification.data) {
+          console.error('Article creation verification failed AFTER CREATION WORKED:', verification.errors);
           throw new Error('Article creation verification failed');
         }
 
+        console.log('Article created, and verification succeeded:', verification.data);
         return { success: true, article: result.data };
       } catch (error) {
-        attempts++;
-        if (attempts === maxAttempts) {
-          throw error;
-        }
-        // Exponential backoff
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 100));
+        console.error('Article creation error:', {
+          articleUrl: article.url,
+          error: error instanceof Error ? {
+            message: error.message,
+            name: error.name,
+            stack: error.stack
+          } : error
+        });
+  
+        return { 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Unknown error during article creation'
+        };
       }
-    }
-
-    throw new Error('Max retry attempts reached');
   } catch (error) {
     console.error('Article creation error:', {
       articleUrl: article.url,
@@ -334,7 +339,7 @@ async function checkArticleExists(title: string, feedId: string): Promise<boolea
     }
   });
 
-  console.log("Existing articles in checkArticleExists:", existingArticles.data);
+  console.log("Existing article found in checkArticleExists:", existingArticles.data);
   return existingArticles.data.length > 0;
 }
 

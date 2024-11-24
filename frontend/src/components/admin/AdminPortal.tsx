@@ -398,7 +398,6 @@ export default function EnhancedAdminDashboard() {
               title="Total Users"
               value={stats.totalUsers}
               description="Total registered users"
-              trend={{ direction: 'up', percentage: 12 }}
             />
           </Grid>
           <Grid item xs={12} md={3}>

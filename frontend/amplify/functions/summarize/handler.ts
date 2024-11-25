@@ -7,23 +7,26 @@ export const handler: Schema["summarize"]["functionHandler"] = async (event) => 
 
   console.log('Received arguments:', { text: text?.length, articleId, summarizerId, specialRequests });
 
-  if (!text || !articleId || !summarizerId || !specialRequests) {
-    throw new Error(`Missing required parameters: ${!text ? 'text ' : ''}${!articleId ? 'articleId ' : ''}${!summarizerId ? 'summarizerId ' : ''}${!specialRequests ? 'specialRequests' : ''}`);
+  if (!text || !articleId || !summarizerId) {
+    throw new Error(`Missing required parameters: ${!text ? 'text ' : ''}${!articleId ? 'articleId ' : ''}${!summarizerId ? 'summarizerId ' : ''}`);
   }
 
   try {
     console.log('Creating summarization service for summarizerId:', summarizerId);
     const summarizationService = await SummarizationServiceFactory.createService(summarizerId);
     
+    // Use empty string as default if specialRequests is not provided
+    const effectiveSpecialRequests = specialRequests || '';
+    
     console.log('Checking for existing summary');
-    const existingSummary = await summarizationService.getSummary(articleId, specialRequests);
+    const existingSummary = await summarizationService.getSummary(articleId, effectiveSpecialRequests);
     if (existingSummary) {
       console.log('Found existing summary');
       return existingSummary.text;
     }
 
     console.log('Generating new summary');
-    const summary = await summarizationService.summarizeArticle(articleId, text, specialRequests);
+    const summary = await summarizationService.summarizeArticle(articleId, text, effectiveSpecialRequests);
     return summary.text;
   } catch (error: any) {
     console.error("Detailed error during summarization:", {

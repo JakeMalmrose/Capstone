@@ -11,6 +11,7 @@ import {
   Alert,
   Stack,
   Paper,
+  Chip,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
@@ -285,9 +286,16 @@ function UnreadArticles() {
 
   return (
     <Box sx={{ p: { xs: 1, sm: 3 }, maxWidth: '100%' }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Read Articles
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+        <Typography variant="h4" component="h1">
+          Read Articles
+        </Typography>
+        <Chip 
+          label={`${unreadArticles.length} article${unreadArticles.length === 1 ? '' : 's'} remaining`}
+          color="primary"
+          sx={{ fontWeight: 'medium' }}
+        />
+      </Box>
 
       <Card>
         <CardContent>
